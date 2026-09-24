@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Josefin+Sans:wght@300;400;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&display=swap');
+@import 'tailwindcss';
+
+/* High-contrast serif @font-face for 'The Seasons' (supports local installation or project asset) */
+@font-face {
+  font-family: 'The Seasons';
+  src: local('The Seasons'),
+       local('TheSeasons'),
+       local('The Seasons Regular'),
+       url('/fonts/TheSeasons-Regular.woff2') format('woff2'),
+       url('/fonts/TheSeasons-Regular.woff') format('woff'),
+       url('/fonts/TheSeasons.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'The Seasons';
+  src: local('The Seasons Bold'),
+       local('TheSeasons-Bold'),
+       url('/fonts/TheSeasons-Bold.woff2') format('woff2'),
+       url('/fonts/TheSeasons-Bold.woff') format('woff'),
+       url('/fonts/TheSeasons-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-paper: #F9F8F6;
+  --color-ink: #1A1A1A;
+  --color-espresso: #2A2118;
+  --color-accent-red: #8B2626;
+  --color-accent-green: #4A5D4E;
+  --color-hairline: rgba(26, 26, 26, 0.15);
+  --font-seasons: 'The Seasons', 'Cormorant Garamond', 'Playfair Display', serif;
+}
+
+@theme {
+  --font-seasons: 'The Seasons', 'Cormorant Garamond', 'Playfair Display', serif;
+  --font-display: 'The Seasons', 'Playfair Display', 'Cormorant Garamond', serif;
+  --font-script: 'Cormorant Garamond', serif;
+  --font-sans: 'Josefin Sans', sans-serif;
+  --font-body: 'Libre Baskerville', serif;
+  --color-paper: #F9F8F6;
+  --color-ink: #1A1A1A;
+  --color-espresso: #2A2118;
+  --color-accent-red: #8B2626;
+  --color-accent-green: #4A5D4E;
+  --color-hairline: rgba(26, 26, 26, 0.15);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  margin: 0;
+  padding: 0;
+}
+
+::selection {
+  background: #8B2626;
+  color: #F9F8F6;
+}
+
+/* Custom thin scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-hairline);
+  border-radius: 10px;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-hairline) transparent;
+}
+
+/* Custom cursor default logic */
+@media (pointer: fine) {
+  * {
+    cursor: none;
+  }
+}
+
+@media (pointer: coarse) {
+  * {
+    cursor: auto;
+  }
+}
+
+/* Editorial 3D Ramen Scroll Text Overlay Styles */
+.editorial-scroll-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.editorial-scroll-title {
+  font-family: var(--font-seasons, 'The Seasons', 'Cormorant Garamond', 'Playfair Display', serif);
+  font-size: clamp(2.5rem, 6vw, 6rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F5C2CE 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0px 3px 10px rgba(30, 15, 18, 0.6));
+  text-shadow: none !important;
+  text-align: center;
+}
+
+.editorial-scroll-sub {
+  color: #F7D6DE;
+  filter: drop-shadow(0px 2px 6px rgba(30, 15, 18, 0.5));
+  text-shadow: none !important;
+  text-align: center;
+}

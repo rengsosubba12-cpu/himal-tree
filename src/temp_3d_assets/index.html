@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scroll-Assembled Chili Oil Noodle Bowl · R3F</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "three": "https://esm.sh/three@0.160.1",
+    "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.19?external=react,react-dom,three",
+    "framer-motion": "https://esm.sh/framer-motion@11.0.24?external=react,react-dom"
+  }
+}
+</script>
+<script src="https://unpkg.com/@babel/standalone@7.24.4/babel.min.js"></script>
+<style>
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background-color: #f2e8d6;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(255,255,255,.55), transparent 55%),
+      radial-gradient(ellipse at 80% 90%, rgba(196,150,90,.18), transparent 60%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #3a2a1c;
+  }
+  .serif { font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; }
+  canvas { display:block; touch-action: pan-y; }
+  .steam { position:absolute; left:50%; top:16%; width:200px; height:240px; transform:translateX(-50%); pointer-events:none; opacity:0; transition:opacity 1s ease; }
+  .steam.active { opacity:1; }
+  .steam span {
+    position:absolute; bottom:0; width:70px; height:70px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,.85) 0%, rgba(255,255,255,.35) 40%, rgba(255,255,255,0) 70%);
+    filter: blur(7px);
+    animation: rise 3.4s ease-in-out infinite;
+  }
+  @keyframes rise {
+    0%   { transform: translate(0,0) scale(.5); opacity:0; }
+    25%  { opacity:.8; }
+    100% { transform: translate(var(--dx), -210px) scale(1.7); opacity:0; }
+  }
+  .phase-dot { width:10px; height:10px; border-radius:9999px; background:#cdbba0; transition: all .35s; }
+  .phase-dot.active { background:#c8451f; box-shadow:0 0 0 5px rgba(200,69,31,.18); transform:scale(1.15); }
+  .phase-dot.done { background:#7a5a3a; }
+  .hint { animation: bob 1.8s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }
+  .fade-in { animation: fadeIn .8s ease both; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px) } to { opacity:1; transform:none } }
+</style>
+</head>
+<body>
+<div id="root">
+  <div class="h-screen w-full flex items-center justify-center text-[#7a5a3a] tracking-widest uppercase text-xs">Loading 3D scene…</div>
+</div>
+
+<script type="text/babel" data-type="module" data-presets="react">
+import React, { useRef, useMemo, useState, useEffect, useLayoutEffect } from 'react';
+import { createRoot } from 'react-dom/client';
+import * as THREE from 'three';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
+
+/* ---------------- utils ---------------- */
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+const damp = THREE.MathUtils.damp;
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------------- procedural textures ---------------- */
+function makeWoodTexture() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#b48157'; ctx.fillRect(0, 0, 1024, 512);
+  const panels = [[0.03, 0.11], [0.36, 0.44], [0.69, 0.78]];
+  panels.forEach(([a, b]) => {
+    ctx.fillStyle = 'rgba(238,208,168,0.6)';
+    ctx.fillRect(a * 1024, 0, (b - a) * 1024, 512);
+  });
+  const rng = mulberry32(7);
+  for (let i = 0; i < 260; i++) {
+    const y = rng() * 512;
+    const dark = 40 + rng() * 60;
+    ctx.strokeStyle = `rgba(${dark + 30},${dark * 0.55},${dark * 0.3},${0.07 + rng() * 0.2})`;
+    ctx.lineWidth = 0.5 + rng() * 2.4;
+    ctx.beginPath(); ctx.moveTo(0, y);
+    for (let x = 0; x <= 1024; x += 24) ctx.lineTo(x, y + Math.sin(x * 0.012 + i) * 3.5 + (rng() - 0.5) * 2);
+    ctx.stroke();
+  }
+  const g = ctx.createLinearGradient(0, 0, 0, 512);
+  g.addColorStop(0, 'rgba(70,38,16,0.45)');
+  g.addColorStop(0.45, 'rgba(0,0,0,0)');
+  g.addColorStop(0.62, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(70,38,16,0.35)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 1024, 512);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  return tex;
+}
+
+function makeSteakTexture() {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#4a2214'; ctx.fillRect(0, 0, 256, 512);
+  const inset = 18;
+  const rg = ctx.createRadialGradient(128, 256, 20, 128, 256, 240);
+  rg.addColorStop(0, '#d4586f'); rg.addColorStop(0.55, '#c94f66'); rg.addColorStop(0.85, '#9a5250'); rg.addColorStop(1, '#6e3a2c');
+  ctx.fillStyle = rg;
+  ctx.beginPath(); ctx.roundRect(inset, inset, 256 - inset * 2, 512 - inset * 2, 40); ctx.fill();
+  const rng = mulberry32(21);
+  ctx.strokeStyle = 'rgba(255,190,200,0.35)'; ctx.lineWidth = 1.2;
+  for (let i = 0; i < 70; i++) {
+    const x = inset + rng() * (256 - inset * 2), y = inset + rng() * (512 - inset * 2);
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (rng() - 0.5) * 30, y + (rng() - 0.5) * 60); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  for (let i = 0; i < 30; i++) { ctx.beginPath(); ctx.ellipse(inset + rng() * 220, inset + rng() * 476, 2 + rng() * 3, 1 + rng() * 2, rng() * 3, 0, Math.PI * 2); ctx.fill(); }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; return tex;
+}
+
+function makeGyozaTexture() {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, '#5a2a10'); g.addColorStop(0.22, '#8a4a1c'); g.addColorStop(0.42, '#d29a52'); g.addColorStop(0.55, '#ead0a0'); g.addColorStop(1, '#f0d9ad');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 256);
+  const rng = mulberry32(99);
+  for (let i = 0; i < 160; i++) {
+    const y = rng() * 120, x = rng() * 256;
+    ctx.fillStyle = `rgba(${30 + rng() * 40},${12 + rng() * 20},${5},${0.35 + rng() * 0.5})`;
+    ctx.beginPath(); ctx.ellipse(x, y, 3 + rng() * 9, 2 + rng() * 5, rng() * 3, 0, Math.PI * 2); ctx.fill();
+  }
+  for (let i = 0; i < 60; i++) {
+    ctx.fillStyle = `rgba(200,120,50,${0.15 + rng() * 0.25})`;
+    ctx.beginPath(); ctx.arc(rng() * 256, 120 + rng() * 100, 2 + rng() * 4, 0, Math.PI * 2); ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; return tex;
+}
+
+/* ---------------- animation wrappers ---------------- */
+// Scroll-linked drop-in wrapper: every ingredient enters from ABOVE the bowl.
+function Ingredient({ progress, drop = 5, children }) {
+  const ref = useRef();
+  useFrame((_, dt) => {
+    const g = ref.current; if (!g) return;
+    const p = progress.get();
+    const t = easeOutCubic(p);
+    g.position.y = damp(g.position.y, drop * (1 - t), 9, dt);
+    g.visible = p > 0.002;
+    const op = clamp01(p * 2.4);
+    if (Math.abs(g.userData.op - op) > 0.002) {
+      g.userData.op = op;
+      g.traverse((o) => {
+        if (!o.material) return;
+        const ms = Array.isArray(o.material) ? o.material : [o.material];
+        ms.forEach((m) => { m.transparent = op < 1; m.opacity = op; });
+      });
+    }
+  });
+  return <group ref={ref} position={[0, drop, 0]} visible={false} userData={{ op: -1 }}>{children}</group>;
+}
+
+// Lightweight in-file equivalent of drei's <Float> + pointer parallax, activates once assembled.
+function Float({ progress, children }) {
+  const ref = useRef();
+  useFrame((state, dt) => {
+    const g = ref.current; if (!g) return;
+    const k = easeOutCubic(progress.get());
+    const t = state.clock.elapsedTime;
+    g.position.y = damp(g.position.y, k * Math.sin(t * 1.1) * 0.09, 5, dt);
+    g.rotation.y = damp(g.rotation.y, k * (state.pointer.x * 0.28 + Math.sin(t * 0.45) * 0.04), 4, dt);
+    g.rotation.x = damp(g.rotation.x, k * (-state.pointer.y * 0.09), 4, dt);
+    g.rotation.z = damp(g.rotation.z, k * Math.sin(t * 0.7) * 0.015, 4, dt);
+  });
+  return <group ref={ref}>{children}</group>;
+}
+
+function CameraRig() {
+  const { camera, size } = useThree();
+  useEffect(() => {
+    const aspect = size.width / size.height;
+    const d = aspect < 0.7 ? 12.2 : aspect < 1.1 ? 10.2 : 8.7;
+    camera.position.set(0, d * 0.8, d * 0.7);
+    camera.lookAt(0, 0.9, 0);
+    camera.updateProjectionMatrix();
+  }, [camera, size]);
+  return null;
+}
+
+/* ---------------- 3D ingredients ---------------- */
+function Bowl({ progress }) {
+  const ref = useRef();
+  const tex = useMemo(makeWoodTexture, []);
+  const geo = useMemo(() => {
+    const pts = [
+      [0, 0], [1.35, 0], [1.6, 0.06], [2.15, 0.45], [2.7, 1.1], [3.05, 1.8], [3.22, 2.4], [3.18, 2.5],
+      [3.0, 2.5], [2.92, 2.05], [2.6, 1.3], [2.05, 0.7], [1.3, 0.4], [0, 0.34],
+    ].map(([x, y]) => new THREE.Vector2(x, y));
+    return new THREE.LatheGeometry(pts, 112);
+  }, []);
+  useFrame((_, dt) => {
+    const m = ref.current; if (!m) return;
+    const t = easeOutCubic(progress.get());
+    const s = damp(m.scale.x, Math.max(0.001, t), 8, dt);
+    m.scale.setScalar(s);
+    m.rotation.y = damp(m.rotation.y, (1 - t) * 1.3, 8, dt);
+    m.rotation.x = damp(m.rotation.x, (1 - t) * -0.35, 8, dt);
+    m.visible = t > 0.001;
+  });
+  return (
+    <mesh ref={ref} geometry={geo} scale={0.001} visible={false} castShadow receiveShadow>
+      <meshStandardMaterial map={tex} roughness={0.58} metalness={0} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+function Noodles() {
+  const { geos, oilDrops } = useMemo(() => {
+    const rng = mulberry32(2024);
+    const shape = new THREE.Shape();
+    const w = 0.17, h = 0.05;
+    shape.moveTo(-w / 2, -h / 2); shape.lineTo(w / 2, -h / 2); shape.lineTo(w / 2, h / 2); shape.lineTo(-w / 2, h / 2); shape.closePath();
+    const geos = [];
+    const R = 2.05;
+    for (let i = 0; i < 46; i++) {
+      const pts = [];
+      let ang = rng() * Math.PI * 2;
+      let r = rng() * 1.6;
+      let x = Math.cos(ang) * r, z = Math.sin(ang) * r;
+      let dir = rng() * Math.PI * 2;
+      for (let k = 0; k < 8; k++) {
+        const rr = Math.hypot(x, z);
+        const y = 1.36 + 0.34 * (1 - rr / 2.3) + rng() * 0.16;
+        pts.push(new THREE.Vector3(x, y, z));
+        dir += (rng() - 0.5) * 1.6;
+        x += Math.cos(dir) * 0.62; z += Math.sin(dir) * 0.62;
+        const nr = Math.hypot(x, z);
+        if (nr > R) { x *= R / nr; z *= R / nr; dir += Math.PI * 0.8; }
+      }
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5);
+      geos.push({ geo: new THREE.ExtrudeGeometry(shape, { steps: 72, bevelEnabled: false, extrudePath: curve }), v: i % 3 });
+    }
+    const oilDrops = [];
+    for (let i = 0; i < 16; i++) {
+      const a = rng() * Math.PI * 2, r = 0.3 + rng() * 1.7;
+      oilDrops.push({ p: [Math.cos(a) * r, 1.42 + 0.32 * (1 - r / 2.3) + 0.12, Math.sin(a) * r], s: 0.07 + rng() * 0.11 });
+    }
+    return { geos, oilDrops };
+  }, []);
+  const mats = useMemo(() => [
+    new THREE.MeshStandardMaterial({ color: '#e9a445', roughness: 0.34, metalness: 0, emissive: '#5a1c00', emissiveIntensity: 0.12 }),
+    new THREE.MeshStandardMaterial({ color: '#dd8a30', roughness: 0.3, metalness: 0, emissive: '#6a1e00', emissiveIntensity: 0.14 }),
+    new THREE.MeshStandardMaterial({ color: '#f0b45a', roughness: 0.38, metalness: 0, emissive: '#4a1400', emissiveIntensity: 0.1 }),
+  ], []);
+  return (
+    <group>
+      {/* chili-oil sauce base */}
+      <mesh position={[0, 1.13, 0]}>
+        <cylinderGeometry args={[2.52, 2.0, 0.56, 64]} />
+        <meshStandardMaterial color="#c4501c" roughness={0.28} emissive="#5a1400" emissiveIntensity={0.2} />
+      </mesh>
+      <mesh position={[0, 1.2, 0]} scale={[2.0, 0.55, 2.0]}>
+        <sphereGeometry args={[1, 40, 24]} />
+        <meshStandardMaterial color="#e29a3f" roughness={0.36} emissive="#4a1400" emissiveIntensity={0.1} />
+      </mesh>
+      {geos.map(({ geo, v }, i) => <mesh key={i} geometry={geo} material={mats[v]} />)}
+      {oilDrops.map((d, i) => (
+        <mesh key={'o' + i} position={d.p} scale={[d.s, d.s * 0.3, d.s]}>
+          <sphereGeometry args={[1, 16, 10]} />
+          <meshStandardMaterial color="#c8300e" roughness={0.12} emissive="#701000" emissiveIntensity={0.3} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Steak() {
+  const topTex = useMemo(makeSteakTexture, []);
+  const slices = useMemo(() => {
+    const out = [];
+    const n = 6, r = 1.72;
+    for (let i = 0; i < n; i++) {
+      const a = -1.2 + (i / (n - 1)) * 1.75;
+      out.push({ a, pos: [Math.cos(a) * r, 1.86, Math.sin(a) * r], ry: Math.PI / 2 - a, lean: -0.92 + (i % 2) * 0.1 });
+    }
+    return out;
+  }, []);
+  const mats = useMemo(() => {
+    const cut = () => new THREE.MeshStandardMaterial({ map: topTex, roughness: 0.42, metalness: 0 });
+    const crust = () => new THREE.MeshStandardMaterial({ color: '#4a2212', roughness: 0.55, metalness: 0 });
+    // [px, nx, py, ny, pz, nz]
+    return slices.map(() => [cut(), cut(), crust(), crust(), crust(), crust()]);
+  }, [slices, topTex]);
+  return (
+    <group>
+      {slices.map((s, i) => (
+        <group key={i} position={s.pos} rotation={[0, s.ry, 0]}>
+          <mesh rotation={[0, 0, s.lean]} material={mats[i]} castShadow>
+            <boxGeometry args={[0.22, 0.74, 1.06]} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function Gyoza() {
+  const tex = useMemo(makeGyozaTexture, []);
+  const items = useMemo(() => {
+    const out = [];
+    const xs = [-1.45, -0.85, -0.25, 0.35, 0.95, 1.5];
+    xs.forEach((x, i) => {
+      const z = 1.62 - 0.19 * x * x;
+      out.push({ pos: [x, 1.72 + (i % 2) * 0.03, z], rot: [-0.12 + (i % 2) * 0.24, x * 0.32 + (i % 2 ? 0.25 : -0.15), (i % 3 - 1) * 0.14] });
+    });
+    return out;
+  }, []);
+  return (
+    <group>
+      {items.map((g, i) => (
+        <group key={i} position={g.pos} rotation={g.rot}>
+          <mesh scale={[0.54, 0.21, 0.31]} castShadow>
+            <sphereGeometry args={[1, 40, 24]} />
+            <meshStandardMaterial map={tex} roughness={0.55} metalness={0} />
+          </mesh>
+          {/* pleated crimped edge */}
+          <mesh position={[0, 0.06, -0.2]} scale={[0.46, 0.09, 0.09]} rotation={[0.35, 0, 0]}>
+            <torusGeometry args={[1, 0.35, 8, 24, Math.PI]} />
+            <meshStandardMaterial color="#e9c88f" roughness={0.62} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function Eggs() {
+  const eggs = useMemo(() => {
+    const rng = mulberry32(555);
+    const r = 1.78;
+    return [-1.32, -1.84, -2.38, -2.94].map((a) => {
+      const seeds = Array.from({ length: 9 }, () => {
+        const t = rng() * Math.PI * 2, rr = Math.sqrt(rng()) * 0.85;
+        return { p: [Math.cos(t) * rr * 0.42, 0.012, Math.sin(t) * rr * 0.56], r: rng() * Math.PI };
+      });
+      return { pos: [Math.cos(a) * r, 1.74, Math.sin(a) * r], ry: -a, seeds, yolkOff: (rng() - 0.5) * 0.1 };
+    });
+  }, []);
+  return (
+    <group>
+      {eggs.map((e, i) => (
+        <group key={i} position={e.pos} rotation={[0.08, e.ry, 0]}>
+          {/* egg white hemisphere */}
+          <mesh scale={[0.46, 0.4, 0.62]} castShadow>
+            <sphereGeometry args={[1, 40, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
+            <meshStandardMaterial color="#f7f4ee" roughness={0.48} />
+          </mesh>
+          {/* cut face */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} scale={[0.46, 0.62, 1]}>
+            <circleGeometry args={[1, 40]} />
+            <meshStandardMaterial color="#fbf8f2" roughness={0.45} />
+          </mesh>
+          {/* jammy yolk */}
+          <mesh position={[0, 0.01, e.yolkOff]} scale={[0.28, 0.1, 0.38]}>
+            <sphereGeometry args={[1, 32, 16]} />
+            <meshStandardMaterial color="#f39a1f" roughness={0.2} emissive="#7a3a00" emissiveIntensity={0.25} />
+          </mesh>
+          <mesh position={[0.04, 0.03, e.yolkOff + 0.05]} scale={[0.15, 0.08, 0.2]}>
+            <sphereGeometry args={[1, 24, 12]} />
+            <meshStandardMaterial color="#ffb52e" roughness={0.12} emissive="#8a4400" emissiveIntensity={0.3} />
+          </mesh>
+          {/* black sesame */}
+          {e.seeds.map((s, k) => (
+            <mesh key={k} position={s.p} rotation={[0, s.r, 0]} scale={[0.028, 0.014, 0.046]}>
+              <sphereGeometry args={[1, 10, 6]} />
+              <meshStandardMaterial color="#111111" roughness={0.35} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function GreenOnions() {
+  const ref = useRef();
+  const count = 150;
+  useLayoutEffect(() => {
+    const m = ref.current; if (!m) return;
+    const rng = mulberry32(31337);
+    const dummy = new THREE.Object3D();
+    const palette = ['#4d9a2c', '#63b23d', '#8ccd63', '#3f8a26', '#dfe9c4', '#a9d98a'];
+    const color = new THREE.Color();
+    for (let i = 0; i < count; i++) {
+      const t = rng() * Math.PI * 2;
+      const rr = Math.pow(rng(), 0.55) * 0.66;
+      const y = 1.82 + (1 - rr / 0.66) * 0.28 + rng() * 0.08;
+      dummy.position.set(0.05 + Math.cos(t) * rr, y, -0.05 + Math.sin(t) * rr * 0.85);
+      dummy.rotation.set(rng() * Math.PI, rng() * Math.PI, rng() * Math.PI);
+      const s = 0.8 + rng() * 0.5;
+      dummy.scale.set(s, s, s);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+      color.set(palette[Math.floor(rng() * palette.length)]);
+      m.setColorAt(i, color);
+    }
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }, []);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, count]} castShadow>
+      <cylinderGeometry args={[0.07, 0.065, 0.075, 10, 1, false]} />
+      <meshStandardMaterial roughness={0.5} />
+    </instancedMesh>
+  );
+}
+
+/* ---------------- scene ---------------- */
+function Scene({ phases }) {
+  return (
+    <>
+      <ambientLight intensity={0.7} color="#fff6ea" />
+      <hemisphereLight args={['#fff7ea', '#8a6a4a', 0.4]} />
+      <directionalLight position={[5, 9, 5]} intensity={1.35} color="#fff2df" castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[-6, 6, -4]} intensity={0.4} color="#dfe8ff" />
+      <CameraRig />
+      <Float progress={phases.done}>
+        <Bowl progress={phases.bowl} />
+        <Ingredient progress={phases.noodles} drop={3.5}><Noodles /></Ingredient>
+        <Ingredient progress={phases.proteins} drop={5}><Steak /><Gyoza /></Ingredient>
+        <Ingredient progress={phases.eggs} drop={5}><Eggs /></Ingredient>
+        <Ingredient progress={phases.garnish} drop={5}><GreenOnions /></Ingredient>
+      </Float>
+    </>
+  );
+}
+
+const PHASES = [
+  { n: '01', t: 'Wooden bowl', d: 'Hand-turned acacia, scaled into view' },
+  { n: '02', t: 'Chili-oil noodles', d: 'Wide flat noodles, glossy & saucy' },
+  { n: '03', t: 'Steak & gyoza', d: 'Medium-rare slices, crispy dumplings' },
+  { n: '04', t: 'Soft-boiled eggs', d: 'Four jammy halves, black sesame' },
+  { n: '05', t: 'Green onions', d: 'Fresh scallions, steam rising' },
+];
+
+function App() {
+  const { scrollYProgress } = useScroll();
+  const phases = {
+    bowl: useTransform(scrollYProgress, [0, 0.2], [0, 1]),
+    noodles: useTransform(scrollYProgress, [0.2, 0.4], [0, 1]),
+    proteins: useTransform(scrollYProgress, [0.4, 0.6], [0, 1]),
+    eggs: useTransform(scrollYProgress, [0.6, 0.8], [0, 1]),
+    garnish: useTransform(scrollYProgress, [0.8, 1.0], [0, 1]),
+    done: useTransform(scrollYProgress, [0.86, 1.0], [0, 1]),
+  };
+  const [phaseIdx, setPhaseIdx] = useState(0);
+  const [steam, setSteam] = useState(false);
+  const [pct, setPct] = useState(0);
+  useMotionValueEvent(scrollYProgress, 'change', (v) => {
+    setPhaseIdx(Math.min(4, Math.floor(v * 5)));
+    setSteam(v > 0.9);
+    setPct(Math.round(v * 100));
+  });
+
+  return (
+    <div className="relative" style={{ height: '540vh' }}>
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
+        <Canvas
+          dpr={[1, 1.6]}
+          shadows
+          gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
+          camera={{ fov: 38, near: 0.1, far: 100, position: [0, 7, 6] }}
+          onCreated={({ gl }) => { gl.setClearColor(0x000000, 0); gl.toneMappingExposure = 1.08; }}
+          style={{ position: 'absolute', inset: 0, background: 'transparent' }}
+        >
+          <Scene phases={phases} />
+        </Canvas>
+
+        {/* Steam (CSS particles) */}
+        <div className={`steam ${steam ? 'active' : ''}`} aria-hidden="true">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span key={i} style={{ left: `${10 + i * 22}px`, '--dx': `${(i % 2 ? 1 : -1) * (12 + i * 6)}px`, animationDelay: `${i * 0.55}s`, animationDuration: `${3 + (i % 3) * 0.5}s` }} />
+          ))}
+        </div>
+
+        {/* Header */}
+        <header className="absolute top-0 left-0 right-0 p-5 md:p-8 flex items-start justify-between pointer-events-none">
+          <div>
+            <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-[#a06a3a] mb-1">Kitchen No. 7 · Chef's Table</p>
+            <h1 className="serif text-2xl md:text-4xl leading-tight text-[#3a2a1c]">Chili Oil Noodle Bowl</h1>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-[#a06a3a]">Assembly</p>
+            <p className="serif text-2xl md:text-3xl tabular-nums text-[#3a2a1c]">{pct}%</p>
+          </div>
+        </header>
+
+        {/* Phase tracker */}
+        <aside className="absolute left-5 md:left-8 bottom-24 md:bottom-1/2 md:translate-y-1/2 pointer-events-none">
+          <ol className="space-y-3 md:space-y-5">
+            {PHASES.map((p, i) => {
+              const state = i < phaseIdx ? 'done' : i === phaseIdx ? 'active' : '';
+              return (
+                <li key={p.n} className="flex items-center gap-3">
+                  <span className={`phase-dot ${state}`} />
+                  <div className={`transition-opacity duration-300 ${i === phaseIdx ? 'opacity-100' : 'opacity-40'}`}>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[10px] tracking-widest text-[#a06a3a]">{p.n}</span>
+                      <span className="serif text-sm md:text-lg text-[#3a2a1c]">{p.t}</span>
+                    </div>
+                    {i === phaseIdx && <p className="hidden md:block text-xs text-[#7a5a3a] fade-in">{p.d}</p>}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </aside>
+
+        {/* Right caption when complete */}
+        <div className={`absolute right-5 md:right-8 bottom-24 md:bottom-1/2 md:translate-y-1/2 max-w-[200px] md:max-w-xs text-right transition-all duration-700 pointer-events-none ${steam ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}`}>
+          <p className="text-[10px] tracking-[0.3em] uppercase text-[#a06a3a] mb-1">Itadakimasu</p>
+          <p className="serif text-base md:text-xl leading-snug text-[#3a2a1c]">Seared steak, pan-fried gyoza, four jammy eggs and a heap of scallions over chili-oil noodles.</p>
+          <p className="text-xs text-[#7a5a3a] mt-2">Move your cursor to tilt the bowl.</p>
+        </div>
+
+        {/* Scroll hint */}
+        <div className={`absolute bottom-6 left-0 right-0 flex flex-col items-center gap-2 transition-opacity duration-500 pointer-events-none ${pct > 92 ? 'opacity-0' : 'opacity-100'}`}>
+          <span className="text-[10px] tracking-[0.3em] uppercase text-[#a06a3a]">Scroll to assemble</span>
+          <svg className="hint w-5 h-5 text-[#a06a3a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+        </div>
+
+        {/* progress bar */}
+        <div className="absolute top-0 left-0 h-[3px] bg-[#c8451f] transition-[width] duration-150" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
