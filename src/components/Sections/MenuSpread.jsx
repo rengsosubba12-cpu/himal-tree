@@ -570,12 +570,9 @@ function MobileStack({ items }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
-export default function MenuSpread() {
-  const items = editorialMenuItems;
-
+function DesktopMenu({ items }) {
   return (
-    <section
-      id="menu"
+    <div
       className="relative bg-[#F9F8F6] text-[#1A1A1A] py-28 md:py-36 px-5 md:px-10 lg:px-16 overflow-hidden"
     >
       {/* Subtle grain texture overlay */}
@@ -606,6 +603,99 @@ export default function MenuSpread() {
       {/* Bottom hairline */}
       <div className="max-w-[1600px] mx-auto mt-24">
         <div className="h-px w-full bg-[rgba(26,26,26,0.12)]" />
+      </div>
+    </div>
+  );
+}
+
+function MobileMenuItem({ item, index }) {
+  const isLeft = index % 2 !== 0; // alternating overlap side
+  const isFirst = index === 0;
+
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  });
+  
+  // Parallax for image: slightly slower than scroll
+  const imageY = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+
+  return (
+    <div ref={ref} className="relative w-full mb-20">
+      {/* The Window */}
+      <div className="w-full h-[55dvh] relative" style={{ overflow: "hidden" }}>
+        <motion.div style={{ y: imageY, height: "120%" }} className="absolute inset-0 top-[-10%]">
+          <img 
+            src={item.imageSrc} 
+            alt={item.name} 
+            loading={isFirst ? undefined : "lazy"}
+            className="w-full h-full object-cover"
+          />
+        </motion.div>
+      </div>
+
+      {/* The Overlap */}
+      <motion.div 
+        className={`bg-[#F4EFEA] relative z-10 p-6 shadow-xl shadow-[#2A2118]/10 w-[85%] -mt-16 ${isLeft ? 'ml-4' : 'ml-auto mr-4'}`}
+        initial={{ y: 20 }}
+        whileInView={{ y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        style={{ opacity: 1 }}
+      >
+        <span className="font-sans text-[9px] tracking-[0.45em] uppercase text-[#2A2118]/60 block mb-2">
+          {item.category}
+        </span>
+        <h3 className="font-display text-3xl text-[#2A2118] mb-1">
+          {item.name}
+        </h3>
+        <p className="font-script italic text-[#2A2118]/60 mb-3" style={{ fontSize: '1rem' }}>
+          {item.nameKr}
+        </p>
+        <p className="font-sans text-[#2A2118] leading-relaxed mb-4" style={{ fontSize: '0.8rem', letterSpacing: '0.05em' }}>
+          {item.description}
+        </p>
+        <div className="flex items-baseline gap-3">
+          <span className="font-display text-[#8B2626] text-xl">
+            ₹{item.priceINR}
+          </span>
+          <span className="font-sans text-[10px] tracking-widest text-[#2A2118]/40">
+            · ₩{item.priceKRW?.toLocaleString()}
+          </span>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function MobileMenu({ items }) {
+  return (
+    <div className="w-full pb-20 bg-[#F9F8F6]">
+      <div className="px-5 pt-24 overflow-hidden">
+        <MenuSectionHeader />
+      </div>
+      <div className="flex flex-col w-full">
+        {items.map((item, i) => (
+          <MobileMenuItem key={item.id} item={item} index={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function MenuSpread() {
+  const items = editorialMenuItems;
+
+  return (
+    <section id="menu" className="w-full">
+      {/* DESKTOP ONLY - 100% Untouched */}
+      <div className="hidden lg:block w-full">
+        <DesktopMenu items={items} /> 
+      </div>
+
+      {/* MOBILE ONLY - New Premium Editorial Design */}
+      <div className="block lg:hidden w-full">
+        <MobileMenu items={items} />
       </div>
     </section>
   );
