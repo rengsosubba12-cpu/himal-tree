@@ -2,6 +2,7 @@ import React, { useRef, useMemo, useEffect, useLayoutEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useTransform } from 'framer-motion';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 /* ================================================================
    Utilities
@@ -215,69 +216,44 @@ function Ingredient({ progress, drop = 5, children }) {
 }
 
 // Post-assembly idle float + pointer parallax
-function Float({ progress, baseScale = 1, children }) {
+function Float({ progress, children }) {
   const ref = useRef();
   useFrame((state, dt) => {
     const g = ref.current;
     if (!g) return;
     const k = easeOutCubic(progress.get());
     const t = state.clock.elapsedTime;
-    
-    // Smoothly apply responsive scale
-    const targetScale = damp(g.scale.x, baseScale, 6, dt);
-    g.scale.setScalar(targetScale);
-
     g.position.y = damp(g.position.y, k * Math.sin(t * 1.1) * 0.09, 5, dt);
-
-    // Disable pointer parallax on touch viewports to prevent jitter during touch scroll
-    const isTouch = typeof window !== 'undefined' && (
-      window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches
-    );
-    const px = isTouch ? 0 : state.pointer.x;
-    const py = isTouch ? 0 : state.pointer.y;
-
     g.rotation.y = damp(
       g.rotation.y,
-      k * (px * 0.28 + Math.sin(t * 0.45) * 0.04),
+      k * (state.pointer.x * 0.28 + Math.sin(t * 0.45) * 0.04),
       4,
       dt,
     );
-    g.rotation.x = damp(g.rotation.x, k * (-py * 0.09), 4, dt);
+    g.rotation.x = damp(g.rotation.x, k * (-state.pointer.y * 0.09), 4, dt);
     g.rotation.z = damp(g.rotation.z, k * Math.sin(t * 0.7) * 0.015, 4, dt);
   });
   return <group ref={ref}>{children}</group>;
 }
 
-// Responsive camera distance and FOV based on viewport aspect ratio and screen width (<768px)
-function CameraRig() {
+// Responsive camera distance based on viewport aspect ratio
+function CameraRig({ isMobile }) {
   const { camera, size } = useThree();
   useEffect(() => {
-    const isMobile = size.width < 768;
     const aspect = size.width / size.height;
-
-    let d;
-    let lookTargetY = 0.9;
-
-    if (isMobile || aspect < 0.75) {
-      // Mobile portrait viewports: move camera back and adjust FOV slightly
-      // so the bowl assembly fits completely without clipping left/right
-      d = aspect < 0.5 ? 14.2 : 12.8;
-      lookTargetY = 0.75;
-      camera.fov = 40;
-    } else if (aspect < 1.1) {
-      d = 10.2;
-      lookTargetY = 0.9;
-      camera.fov = 38;
+    if (isMobile) {
+      // In portrait mobile viewports (e.g. 9:19.5, aspect ~ 0.46 - 0.6):
+      // Move camera back to ensure the entire bowl + ingredients remain centered and unclipped
+      const d = Math.max(14.5, (size.height / Math.max(size.width, 1)) * 6.6);
+      camera.position.set(0, d * 0.78, d * 0.72);
     } else {
-      d = 8.7;
-      lookTargetY = 0.9;
-      camera.fov = 38;
+      // Desktop parameters strictly preserved:
+      const d = aspect < 0.7 ? 12.2 : aspect < 1.1 ? 10.2 : 8.7;
+      camera.position.set(0, d * 0.8, d * 0.7);
     }
-
-    camera.position.set(0, d * 0.8, d * 0.7);
-    camera.lookAt(0, lookTargetY, 0);
+    camera.lookAt(0, 0.9, 0);
     camera.updateProjectionMatrix();
-  }, [camera, size]);
+  }, [camera, size, isMobile]);
   return null;
 }
 
@@ -717,19 +693,7 @@ function SteamParticles({ progress }) {
    Scene Composition
    ================================================================ */
 
-function Scene({ phases }) {
-  const { size } = useThree();
-  const isMobile = size.width < 768;
-  const aspect = size.width / size.height;
-
-  // Dynamically scale the 3D bowl down on mobile portrait (<768px)
-  // so the bowl fits completely inside the screen without clipping off the left/right edges
-  const bowlScale = isMobile
-    ? aspect < 0.52
-      ? 0.65
-      : 0.74
-    : 1.0;
-
+function Scene({ phases, isMobile }) {
   return (
     <>
       {/* Warm ambient fill */}
@@ -746,24 +710,26 @@ function Scene({ phases }) {
       {/* Cool fill light */}
       <directionalLight position={[-6, 6, -4]} intensity={0.4} color="#dfe8ff" />
 
-      <CameraRig />
+      <CameraRig isMobile={isMobile} />
 
-      <Float progress={phases.done} baseScale={bowlScale}>
-        <Bowl progress={phases.bowl} />
-        <Ingredient progress={phases.noodles} drop={3.5}>
-          <Noodles />
-        </Ingredient>
-        <Ingredient progress={phases.proteins} drop={5}>
-          <Steak />
-          <Gyoza />
-        </Ingredient>
-        <Ingredient progress={phases.eggs} drop={5}>
-          <Eggs />
-        </Ingredient>
-        <Ingredient progress={phases.garnish} drop={5}>
-          <GreenOnions />
-        </Ingredient>
-        <SteamParticles progress={phases.steam} />
+      <Float progress={phases.done}>
+        <group scale={isMobile ? [0.82, 0.82, 0.82] : [1, 1, 1]}>
+          <Bowl progress={phases.bowl} />
+          <Ingredient progress={phases.noodles} drop={3.5}>
+            <Noodles />
+          </Ingredient>
+          <Ingredient progress={phases.proteins} drop={5}>
+            <Steak />
+            <Gyoza />
+          </Ingredient>
+          <Ingredient progress={phases.eggs} drop={5}>
+            <Eggs />
+          </Ingredient>
+          <Ingredient progress={phases.garnish} drop={5}>
+            <GreenOnions />
+          </Ingredient>
+          <SteamParticles progress={phases.steam} />
+        </group>
       </Float>
     </>
   );
@@ -774,6 +740,8 @@ function Scene({ phases }) {
    ================================================================ */
 
 export default function RamenCanvas3D({ scrollProgress, className = "sticky top-0 h-screen h-[100dvh] w-full" }) {
+  const isMobile = useIsMobile();
+
   // Create phase MotionValues outside Canvas (framer-motion hooks must be in DOM React tree)
   const phases = {
     bowl: useTransform(scrollProgress, [0, 0.2], [0, 1]),
@@ -786,16 +754,12 @@ export default function RamenCanvas3D({ scrollProgress, className = "sticky top-
   };
 
   return (
-    <div
-      className={`${className} pointer-events-none select-none`}
-      style={{ touchAction: 'pan-y' }}
-    >
+    <div className={`${className} pointer-events-none touch-pan-y`}>
       <Canvas
         dpr={[1, 1.6]}
         shadows
         gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         camera={{ fov: 38, near: 0.1, far: 100, position: [0, 7, 6] }}
-        eventSource={typeof document !== 'undefined' ? document.body : undefined}
         onCreated={({ gl }) => {
           gl.setClearColor(0x000000, 0);
           gl.toneMappingExposure = 1.08;
@@ -804,11 +768,11 @@ export default function RamenCanvas3D({ scrollProgress, className = "sticky top-
           position: 'absolute',
           inset: 0,
           background: 'transparent',
-          pointerEvents: 'none',
-          touchAction: 'pan-y',
+          pointerEvents: isMobile ? 'none' : 'auto',
+          touchAction: 'pan-y'
         }}
       >
-        <Scene phases={phases} />
+        <Scene phases={phases} isMobile={isMobile} />
       </Canvas>
     </div>
   );

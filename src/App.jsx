@@ -48,9 +48,9 @@ function App() {
       <section
         id="home"
         ref={heroRef}
-        className="relative h-[550dvh] w-full"
+        className="relative h-[550vh] w-full"
       >
-        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden">
+        <div className="sticky top-0 h-screen h-[100dvh] w-full overflow-hidden">
           {/* Phase 1: Responsive Scroll-Driven Sakura Curtain Reveal */}
           <HeroCurtainReveal scrollProgress={curtainProgress} />
 
@@ -68,8 +68,8 @@ function App() {
       <BookingForm />
 
       {/* Footer */}
-      <footer className="bg-paper text-ink py-20 px-6 md:px-16 border-t border-hairline">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+      <footer className="bg-paper text-ink py-14 md:py-20 px-4 sm:px-8 md:px-16 border-t border-hairline">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {/* Brand */}
           <div>
             <h3 className="font-display text-3xl mb-2">{cafeInfo.name}</h3>

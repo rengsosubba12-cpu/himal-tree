@@ -16,20 +16,15 @@ function QuoteItem({ quote, scrollProgress }) {
 
   return (
     <motion.div
-      style={{
-        opacity,
-        y,
-        willChange: 'transform, opacity',
-        transform: 'translateZ(0)',
-      }}
+      style={{ opacity, y }}
       className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 text-center pointer-events-none select-none"
     >
-      <div className="editorial-scroll-container max-w-4xl mx-auto w-full flex flex-col items-center justify-center text-center px-4">
+      <div className="editorial-scroll-container max-w-4xl mx-auto w-full flex flex-col items-center justify-center text-center">
         <h2
           className="editorial-scroll-title font-seasons font-bold tracking-tight text-center inline-block"
           style={{
             fontFamily: "'The Seasons', 'Cormorant Garamond', 'Playfair Display', serif",
-            fontSize: 'clamp(1.85rem, 5.5vw, 5.5rem)',
+            fontSize: 'clamp(1.75rem, 5vw, 6rem)',
             lineHeight: 1.15,
             background: 'linear-gradient(180deg, #FFFFFF 0%, #F5C2CE 100%)',
             WebkitBackgroundClip: 'text',
@@ -45,7 +40,7 @@ function QuoteItem({ quote, scrollProgress }) {
 
         {quote.sub && (
           <p
-            className="editorial-scroll-sub mt-3 sm:mt-4 font-script text-[clamp(1rem,2vw,1.75rem)] italic tracking-widest text-center"
+            className="editorial-scroll-sub mt-4 font-script text-[clamp(1.15rem,2.2vw,1.85rem)] italic tracking-widest text-center"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
               color: '#F7D6DE',
@@ -60,7 +55,7 @@ function QuoteItem({ quote, scrollProgress }) {
 
         {quote.subKr && (
           <p
-            className="editorial-scroll-sub mt-2 sm:mt-3 font-sans text-[10px] sm:text-xs md:text-sm tracking-[0.25em] sm:tracking-[0.3em] uppercase text-center"
+            className="editorial-scroll-sub mt-4 font-sans text-xs md:text-sm tracking-[0.3em] uppercase text-center"
             style={{
               fontFamily: "'Josefin Sans', sans-serif",
               color: '#F7D6DE',
