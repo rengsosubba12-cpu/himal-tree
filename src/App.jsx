@@ -48,9 +48,9 @@ function App() {
       <section
         id="home"
         ref={heroRef}
-        className="relative h-[550vh] w-full"
+        className="relative h-[550dvh] w-full"
       >
-        <div className="sticky top-0 h-screen h-[100dvh] w-full overflow-hidden">
+        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden">
           {/* Phase 1: Responsive Scroll-Driven Sakura Curtain Reveal */}
           <HeroCurtainReveal scrollProgress={curtainProgress} />
 

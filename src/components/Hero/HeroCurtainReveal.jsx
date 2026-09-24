@@ -62,7 +62,7 @@ export default function HeroCurtainReveal({ scrollProgress }) {
     <motion.div
       ref={containerRef}
       style={{ visibility: containerVisibility }}
-      className="absolute inset-0 z-10 w-full h-full pointer-events-none select-none overflow-hidden flex items-center justify-center"
+      className="absolute inset-0 z-10 w-full h-full h-[100dvh] pointer-events-none select-none overflow-hidden flex items-center justify-center"
       aria-label="Himal Tree Curtain Reveal"
     >
       {/* ================================================================
@@ -73,13 +73,15 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           scale: logoScale,
           opacity: logoOpacity,
           y: logoHandoffY,
+          willChange: 'transform, opacity',
+          transform: 'translateZ(0)',
         }}
         className="relative z-1 flex flex-col items-center justify-center px-4 max-w-full"
       >
         <img
           src="/assets/logo.png"
           alt="Himal Tree — Himal 나무"
-          className="w-[clamp(280px,50vw,720px)] max-w-[85vw] h-auto object-contain filter drop-shadow-[0_4px_24px_rgba(139,38,38,0.12)]"
+          className="w-[clamp(240px,46vw,720px)] max-w-[82vw] h-auto object-contain filter drop-shadow-[0_4px_24px_rgba(139,38,38,0.12)]"
           loading="eager"
           decoding="async"
         />
@@ -87,12 +89,12 @@ export default function HeroCurtainReveal({ scrollProgress }) {
         {/* Subtle Luxury Korean Editorial Tagline */}
         <motion.div
           style={{ opacity: logoOpacity }}
-          className="mt-4 md:mt-6 text-center space-y-1"
+          className="mt-3 sm:mt-4 md:mt-6 text-center space-y-1 px-2"
         >
-          <p className="font-script italic text-lg md:text-2xl tracking-widest text-ink/80">
+          <p className="font-script italic text-base sm:text-lg md:text-2xl tracking-widest text-ink/80">
             A Korean Café in Siliguri
           </p>
-          <p className="font-sans text-[11px] md:text-xs tracking-[0.4em] uppercase text-ink/50">
+          <p className="font-sans text-[10px] sm:text-[11px] md:text-xs tracking-[0.35em] sm:tracking-[0.4em] uppercase text-ink/50">
             실리구리의 한국 카페
           </p>
         </motion.div>
@@ -109,13 +111,14 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           scale: leftScale,
           opacity: leftOpacity,
           willChange: 'transform, opacity',
+          transform: 'translateZ(0)',
         }}
-        className="absolute top-0 left-0 z-10 origin-top-left pointer-events-none"
+        className="absolute -top-1 sm:top-0 left-0 z-10 origin-top-left pointer-events-none"
       >
         <img
           src="/assets/covers/CoverLeft.png"
           alt="Sakura Branch Left"
-          className="w-[72vw] sm:w-[56vw] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
+          className="w-[clamp(60vw,75vw,85vw)] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
           loading="eager"
           decoding="async"
         />
@@ -132,13 +135,14 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           scale: rightScale,
           opacity: rightOpacity,
           willChange: 'transform, opacity',
+          transform: 'translateZ(0)',
         }}
-        className="absolute top-0 right-0 z-10 origin-top-right pointer-events-none"
+        className="absolute -top-1 sm:top-0 right-0 z-10 origin-top-right pointer-events-none"
       >
         <img
           src="/assets/covers/CoverRight.png"
           alt="Sakura Branch Right"
-          className="w-[72vw] sm:w-[56vw] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
+          className="w-[clamp(60vw,75vw,85vw)] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
           loading="eager"
           decoding="async"
         />
@@ -151,8 +155,10 @@ export default function HeroCurtainReveal({ scrollProgress }) {
         style={{
           opacity: hintOpacity,
           y: hintY,
+          willChange: 'transform, opacity',
+          transform: 'translateZ(0)',
         }}
-        className="absolute bottom-8 md:bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none"
+        className="absolute bottom-6 sm:bottom-8 md:bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none"
       >
         <span className="font-sans text-[10px] md:text-xs tracking-[0.35em] uppercase text-ink/40 mb-2">
           Scroll to Explore

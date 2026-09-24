@@ -169,25 +169,53 @@ function CinematicReveal({ children, delay = 0, className = '', style = {} }) {
         clipPath: { duration: 1.5, ease: [0.22, 1, 0.36, 1], delay },
         scale:    { duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: delay + 0.05 },
       }}
-      style={{ willChange: 'transform, clip-path', ...style }}
+      style={{ willChange: 'transform, clip-path', transform: 'translateZ(0)', ...style }}
     >
       {children}
     </motion.div>
   );
 }
 
+function useIsTouchViewport() {
+  const [isTouch, setIsTouch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return (
+        window.innerWidth < 768 ||
+        window.matchMedia('(pointer: coarse)').matches ||
+        window.matchMedia('(max-width: 767px)').matches
+      );
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const check = () => {
+      const isMobileWidth = window.innerWidth < 768 || window.matchMedia('(max-width: 767px)').matches;
+      const isTouchPointer = window.matchMedia('(pointer: coarse)').matches;
+      setIsTouch(isMobileWidth || isTouchPointer);
+    };
+
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  return isTouch;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ScrollStaggerBlock — useScroll-triggered staggered fade-in + upward drift
-// (translateY: 40px -> 0px) as text blocks approach the viewport center
+// strictly disables micro-parallax on touch viewports to eliminate scroll jitter
 // ─────────────────────────────────────────────────────────────────────────────
 function ScrollStaggerBlock({ children, className = '' }) {
+  const isTouch = useIsTouchViewport();
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start 92%', 'center 52%'],
   });
 
-  const rawY = useTransform(scrollYProgress, [0, 1], [40, 0]);
+  const rawY = useTransform(scrollYProgress, [0, 1], isTouch ? [0, 0] : [40, 0]);
   const rawOpacity = useTransform(scrollYProgress, [0, 0.85], [0, 1]);
 
   const y = useSpring(rawY, { stiffness: 95, damping: 22, restDelta: 0.001 });
@@ -196,7 +224,12 @@ function ScrollStaggerBlock({ children, className = '' }) {
   return (
     <motion.div
       ref={ref}
-      style={{ y, opacity, willChange: 'transform, opacity' }}
+      style={{
+        y: isTouch ? 0 : y,
+        opacity,
+        willChange: isTouch ? 'opacity' : 'transform, opacity',
+        transform: 'translateZ(0)',
+      }}
       className={className}
     >
       {children}
@@ -204,43 +237,29 @@ function ScrollStaggerBlock({ children, className = '' }) {
   );
 }
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.matchMedia('(max-width: 767px)').matches;
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const handler = (e) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  return isMobile;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // ParallaxPullQuote — Oversized italicized pull-quote overlapping boundaries
-// Micro-parallax moves 10-15% faster vertically; STRICTLY DISABLED ON MOBILE
+// Micro-parallax moves 10-15% faster vertically; STRICTLY DISABLED ON TOUCH VIEWPORTS
 // ─────────────────────────────────────────────────────────────────────────────
 function ParallaxPullQuote({ quote, alignRight = false, chapterRef }) {
-  const isMobile = useIsMobile();
+  const isTouch = useIsTouchViewport();
 
   const { scrollYProgress } = useScroll({
     target: chapterRef,
     offset: ['start end', 'end start'],
   });
 
-  // Micro-parallax: Moves 10-15% faster vertically than body; strictly zero on mobile
-  const rawY = useTransform(scrollYProgress, [0, 1], isMobile ? [0, 0] : [45, -45]);
+  // Micro-parallax: Moves 10-15% faster vertically than body on desktop; strictly zero on touch viewports
+  const rawY = useTransform(scrollYProgress, [0, 1], isTouch ? [0, 0] : [45, -45]);
   const y = useSpring(rawY, { stiffness: 65, damping: 24, restDelta: 0.001 });
 
   return (
     <motion.blockquote
-      style={{ y: isMobile ? 0 : y, willChange: isMobile ? 'auto' : 'transform' }}
+      style={{
+        y: isTouch ? 0 : y,
+        willChange: isTouch ? 'auto' : 'transform',
+        transform: 'translateZ(0)',
+      }}
       className={`relative my-10 md:my-14 lg:my-16 z-20 max-w-[44ch] ${
         alignRight
           ? 'text-right md:-mr-8 lg:-mr-16 xl:-mr-20 ml-auto'
@@ -559,38 +578,41 @@ function StickyChapterDesktopTablet({ chapter }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Mobile Chapter (<768px)
 // Stacked vertically with negative margin physical overlap card
-// Opaque textured paper look (no backdrop-blur), micro-parallax disabled
+// Solid textured paper background (bg-[#F4EFEA]), subtle drop-shadow (no glassmorphism/blur),
+// media container aspect ratio: aspect-[4/5] with object-position: center top,
+// micro-parallax disabled on touch viewports
 // ─────────────────────────────────────────────────────────────────────────────
 function StickyChapterMobile({ chapter }) {
   const chapterRef = useRef(null);
 
   return (
-    <div ref={chapterRef} className="md:hidden flex flex-col mb-24 last:mb-8">
-      {/* Mobile Media: Signature clip-path wipe reveal & top-weighted positioning */}
+    <div ref={chapterRef} className="md:hidden flex flex-col mb-16 sm:mb-20 last:mb-8">
+      {/* Mobile Media: aspect-[4/5] with object-position: center top */}
       <CinematicReveal
         delay={0.05}
-        className="relative w-full h-[54vh] min-h-[340px] overflow-hidden rounded-sm shadow-lg border border-[#2A2118]/10"
+        className="relative w-full aspect-[4/5] overflow-hidden rounded-sm shadow-md border border-[#2A2118]/10"
+        style={{ willChange: 'transform, clip-path', transform: 'translateZ(0)' }}
       >
         <div className="relative w-full h-full">
           {chapter.media.type === 'video' ? (
             <StoryVideo
               src={chapter.media.src}
               alt={chapter.media.alt}
-              objectPosition={chapter.media.objectPosition}
+              objectPosition="center top"
             />
           ) : (
             <StoryImage
               src={chapter.media.src}
               alt={chapter.media.alt}
-              objectPosition={chapter.media.objectPosition}
+              objectPosition="center top"
             />
           )}
 
           {/* Chapter Watermark Number */}
           <div className="absolute top-4 left-5 z-10 pointer-events-none select-none">
             <span
-              className="text-[#F9F8F6]/35 drop-shadow font-serif"
-              style={{ fontSize: '3.6rem', lineHeight: 1, ...SEASONS_FONT }}
+              className="text-[#F9F8F6]/40 drop-shadow-md font-serif"
+              style={{ fontSize: 'clamp(2.8rem, 8vw, 3.6rem)', lineHeight: 1, ...SEASONS_FONT }}
               aria-hidden="true"
             >
               {chapter.chapterNumber}
@@ -598,23 +620,22 @@ function StickyChapterMobile({ chapter }) {
           </div>
 
           {/* Location Tag */}
-          <div className="absolute bottom-10 left-5 z-10 pointer-events-none select-none">
-            <span className="font-sans text-[8px] tracking-[0.3em] uppercase text-[#F9F8F6]/60 drop-shadow">
+          <div className="absolute bottom-12 sm:bottom-16 left-5 z-10 pointer-events-none select-none">
+            <span className="font-sans text-[8px] tracking-[0.3em] uppercase text-[#F9F8F6]/75 drop-shadow">
               {chapter.coords}
             </span>
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,20,14,0.5)] via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,20,14,0.45)] via-transparent to-transparent pointer-events-none" />
         </div>
       </CinematicReveal>
 
-      {/* Mobile Overlapping Text Card - Opaque Textured Paper (no backdrop blur) */}
+      {/* Mobile Overlapping Text Placard: -mt-10 sm:-mt-14 with solid textured paper background (bg-[#F4EFEA]) and subtle drop-shadow (no glassmorphism/blur) */}
       <div
-        className="relative z-10 -mt-[14%] mx-3 sm:mx-6 p-7 sm:p-9 bg-[#F9F8F6] rounded-sm shadow-2xl border border-[#2A2118]/15"
+        className="relative z-10 -mt-10 sm:-mt-14 mx-3 sm:mx-6 p-6 sm:p-8 bg-[#F4EFEA] rounded-sm shadow-lg border border-[#2A2118]/12"
         style={{
-          backgroundImage:
-            'radial-gradient(rgba(42, 33, 24, 0.05) 1px, transparent 0)',
-          backgroundSize: '24px 24px',
+          transform: 'translateZ(0)',
+          willChange: 'transform',
         }}
       >
         {/* Eyebrow */}
@@ -624,14 +645,14 @@ function StickyChapterMobile({ chapter }) {
 
         {/* Title in The Seasons */}
         <h3
-          className="text-[#1A1A1A] leading-[0.94] mb-5 font-normal"
-          style={{ fontSize: 'clamp(2.3rem, 8vw, 3.2rem)', ...SEASONS_FONT }}
+          className="text-[#1A1A1A] leading-[0.96] mb-4 font-normal"
+          style={{ fontSize: 'clamp(1.85rem, 7vw, 2.8rem)', ...SEASONS_FONT }}
         >
           {chapter.title}
         </h3>
 
         {/* Hairline Divider */}
-        <div className="h-px w-12 bg-[#2A2118]/20 mb-6" />
+        <div className="h-px w-12 bg-[#2A2118]/20 mb-5" />
 
         {/* Narrative Part 1 */}
         <p
@@ -642,10 +663,10 @@ function StickyChapterMobile({ chapter }) {
         </p>
 
         {/* Italicized Pull-Quote (No Parallax on Mobile, Red Accent Border) */}
-        <blockquote className="my-6 border-l-2 border-[#8B2626] pl-4 py-1">
+        <blockquote className="my-5 border-l-2 border-[#8B2626] pl-4 py-1">
           <p
             className="text-[#2A2118] italic leading-[1.25]"
-            style={{ fontSize: 'clamp(1.25rem, 4.6vw, 1.6rem)', ...SEASONS_FONT }}
+            style={{ fontSize: 'clamp(1.15rem, 4.2vw, 1.45rem)', ...SEASONS_FONT }}
           >
             &ldquo;{chapter.pullQuote}&rdquo;
           </p>
@@ -661,19 +682,19 @@ function StickyChapterMobile({ chapter }) {
 
         {/* Narrative Part 3 */}
         <p
-          className="font-body text-[#2A2118] leading-[1.85] opacity-85 italic mb-6"
+          className="font-body text-[#2A2118] leading-[1.85] opacity-85 italic mb-5"
           style={{ fontSize: '0.8rem', letterSpacing: '0.02em' }}
         >
           {chapter.narrativePart3}
         </p>
 
         {/* Card Footer Stamp */}
-        <div className="pt-5 border-t border-[#2A2118]/12 flex items-center justify-between">
+        <div className="pt-4 border-t border-[#2A2118]/12 flex items-center justify-between">
           <span className="font-sans text-[8px] tracking-[0.35em] uppercase opacity-45 font-semibold">
             Himal Tree Chronicles
           </span>
           <span
-            className="text-[#2A2118]/25 text-3xl font-serif"
+            className="text-[#2A2118]/25 text-2xl font-serif"
             style={SEASONS_FONT}
           >
             {chapter.chapterNumber}
@@ -694,7 +715,7 @@ function StoriesSectionHeader() {
   const chars = title.split('');
 
   return (
-    <div ref={ref} className="mb-20 md:mb-28 overflow-hidden px-6 md:px-12 lg:px-16">
+    <div ref={ref} className="mb-12 sm:mb-16 md:mb-28 overflow-hidden px-4 sm:px-6 md:px-12 lg:px-16">
       {/* Eyebrow */}
       <motion.span
         className="font-sans text-[10px] tracking-[0.55em] uppercase opacity-45 block mb-5 font-semibold"
@@ -708,7 +729,7 @@ function StoriesSectionHeader() {
       {/* Main Title Character-by-Character Wipe */}
       <h2
         className="leading-[0.88] overflow-hidden block"
-        style={{ fontSize: 'clamp(5rem, 11vw, 12rem)', ...SEASONS_FONT }}
+        style={{ fontSize: 'clamp(2.75rem, 9.5vw, 12rem)', ...SEASONS_FONT }}
         aria-label={title}
       >
         {chars.map((ch, i) => (
@@ -726,7 +747,7 @@ function StoriesSectionHeader() {
               ease: [0.22, 1, 0.36, 1],
               delay: i * 0.04,
             }}
-            style={{ willChange: 'transform, clip-path' }}
+            style={{ willChange: 'transform, clip-path', transform: 'translateZ(0)' }}
           >
             {ch === ' ' ? '\u00A0' : ch}
           </motion.span>
@@ -736,7 +757,7 @@ function StoriesSectionHeader() {
       {/* Poetic Subtitle */}
       <motion.p
         className="italic text-[#2A2118] opacity-65 mt-4 max-w-[55ch]"
-        style={{ fontSize: 'clamp(1rem, 1.4vw, 1.5rem)', ...SEASONS_FONT }}
+        style={{ fontSize: 'clamp(0.95rem, 1.4vw, 1.5rem)', ...SEASONS_FONT }}
         initial={{ opacity: 0, y: 16 }}
         animate={isInView ? { opacity: 0.65, y: 0 } : { opacity: 0, y: 16 }}
         transition={{ duration: 0.85, ease: 'easeOut', delay: 0.35 }}
@@ -746,7 +767,7 @@ function StoriesSectionHeader() {
 
       {/* Animated Expanding Hairline */}
       <motion.div
-        className="h-px bg-[#2A2118]/15 mt-10"
+        className="h-px bg-[#2A2118]/15 mt-8 sm:mt-10"
         initial={{ scaleX: 0, originX: 0 }}
         animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
         transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.45 }}
@@ -786,8 +807,8 @@ export default function StoriesSection() {
       <div
         className="relative z-10 max-w-[1700px] mx-auto"
         style={{
-          paddingTop: 'clamp(6rem, 10vw, 10rem)',
-          paddingBottom: 'clamp(5rem, 8vw, 8rem)',
+          paddingTop: 'clamp(3.5rem, 8vw, 10rem)',
+          paddingBottom: 'clamp(3.5rem, 6vw, 8rem)',
         }}
       >
         {/* Section Header */}
@@ -807,7 +828,7 @@ export default function StoriesSection() {
         </div>
 
         {/* Section Colophon / End Seal */}
-        <div className="px-6 md:px-12 lg:px-16 mt-20 md:mt-28">
+        <div className="px-4 sm:px-6 md:px-12 lg:px-16 mt-14 sm:mt-20 md:mt-28">
           <div className="h-px w-full bg-[#2A2118]/15 mb-8" />
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-sans text-[9px] tracking-[0.35em] uppercase opacity-45">
             <span>Himal Tree Chronicles &middot; Volume I</span>

@@ -215,34 +215,67 @@ function Ingredient({ progress, drop = 5, children }) {
 }
 
 // Post-assembly idle float + pointer parallax
-function Float({ progress, children }) {
+function Float({ progress, baseScale = 1, children }) {
   const ref = useRef();
   useFrame((state, dt) => {
     const g = ref.current;
     if (!g) return;
     const k = easeOutCubic(progress.get());
     const t = state.clock.elapsedTime;
+    
+    // Smoothly apply responsive scale
+    const targetScale = damp(g.scale.x, baseScale, 6, dt);
+    g.scale.setScalar(targetScale);
+
     g.position.y = damp(g.position.y, k * Math.sin(t * 1.1) * 0.09, 5, dt);
+
+    // Disable pointer parallax on touch viewports to prevent jitter during touch scroll
+    const isTouch = typeof window !== 'undefined' && (
+      window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches
+    );
+    const px = isTouch ? 0 : state.pointer.x;
+    const py = isTouch ? 0 : state.pointer.y;
+
     g.rotation.y = damp(
       g.rotation.y,
-      k * (state.pointer.x * 0.28 + Math.sin(t * 0.45) * 0.04),
+      k * (px * 0.28 + Math.sin(t * 0.45) * 0.04),
       4,
       dt,
     );
-    g.rotation.x = damp(g.rotation.x, k * (-state.pointer.y * 0.09), 4, dt);
+    g.rotation.x = damp(g.rotation.x, k * (-py * 0.09), 4, dt);
     g.rotation.z = damp(g.rotation.z, k * Math.sin(t * 0.7) * 0.015, 4, dt);
   });
   return <group ref={ref}>{children}</group>;
 }
 
-// Responsive camera distance based on viewport aspect ratio
+// Responsive camera distance and FOV based on viewport aspect ratio and screen width (<768px)
 function CameraRig() {
   const { camera, size } = useThree();
   useEffect(() => {
+    const isMobile = size.width < 768;
     const aspect = size.width / size.height;
-    const d = aspect < 0.7 ? 12.2 : aspect < 1.1 ? 10.2 : 8.7;
+
+    let d;
+    let lookTargetY = 0.9;
+
+    if (isMobile || aspect < 0.75) {
+      // Mobile portrait viewports: move camera back and adjust FOV slightly
+      // so the bowl assembly fits completely without clipping left/right
+      d = aspect < 0.5 ? 14.2 : 12.8;
+      lookTargetY = 0.75;
+      camera.fov = 40;
+    } else if (aspect < 1.1) {
+      d = 10.2;
+      lookTargetY = 0.9;
+      camera.fov = 38;
+    } else {
+      d = 8.7;
+      lookTargetY = 0.9;
+      camera.fov = 38;
+    }
+
     camera.position.set(0, d * 0.8, d * 0.7);
-    camera.lookAt(0, 0.9, 0);
+    camera.lookAt(0, lookTargetY, 0);
     camera.updateProjectionMatrix();
   }, [camera, size]);
   return null;
@@ -685,6 +718,18 @@ function SteamParticles({ progress }) {
    ================================================================ */
 
 function Scene({ phases }) {
+  const { size } = useThree();
+  const isMobile = size.width < 768;
+  const aspect = size.width / size.height;
+
+  // Dynamically scale the 3D bowl down on mobile portrait (<768px)
+  // so the bowl fits completely inside the screen without clipping off the left/right edges
+  const bowlScale = isMobile
+    ? aspect < 0.52
+      ? 0.65
+      : 0.74
+    : 1.0;
+
   return (
     <>
       {/* Warm ambient fill */}
@@ -703,7 +748,7 @@ function Scene({ phases }) {
 
       <CameraRig />
 
-      <Float progress={phases.done}>
+      <Float progress={phases.done} baseScale={bowlScale}>
         <Bowl progress={phases.bowl} />
         <Ingredient progress={phases.noodles} drop={3.5}>
           <Noodles />
@@ -728,7 +773,7 @@ function Scene({ phases }) {
    Exported Component
    ================================================================ */
 
-export default function RamenCanvas3D({ scrollProgress, className = "sticky top-0 h-screen w-full" }) {
+export default function RamenCanvas3D({ scrollProgress, className = "sticky top-0 h-screen h-[100dvh] w-full" }) {
   // Create phase MotionValues outside Canvas (framer-motion hooks must be in DOM React tree)
   const phases = {
     bowl: useTransform(scrollProgress, [0, 0.2], [0, 1]),
@@ -741,17 +786,27 @@ export default function RamenCanvas3D({ scrollProgress, className = "sticky top-
   };
 
   return (
-    <div className={className}>
+    <div
+      className={`${className} pointer-events-none select-none`}
+      style={{ touchAction: 'pan-y' }}
+    >
       <Canvas
         dpr={[1, 1.6]}
         shadows
         gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         camera={{ fov: 38, near: 0.1, far: 100, position: [0, 7, 6] }}
+        eventSource={typeof document !== 'undefined' ? document.body : undefined}
         onCreated={({ gl }) => {
           gl.setClearColor(0x000000, 0);
           gl.toneMappingExposure = 1.08;
         }}
-        style={{ position: 'absolute', inset: 0, background: 'transparent' }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'transparent',
+          pointerEvents: 'none',
+          touchAction: 'pan-y',
+        }}
       >
         <Scene phases={phases} />
       </Canvas>
