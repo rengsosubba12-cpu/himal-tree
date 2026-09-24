@@ -608,75 +608,344 @@ function DesktopMenu({ items }) {
   );
 }
 
-function MobileMenuItem({ item, index }) {
-  const isLeft = index % 2 !== 0; // alternating overlap side
-  const isFirst = index === 0;
+// ─────────────────────────────────────────────────────────────────────────────
+// MOBILE LOOKBOOK — Avant-Garde Asymmetrical Editorial Experience (<1024px)
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"]
-  });
-  
-  // Parallax for image: slightly slower than scroll
-  const imageY = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
-
+function MobileMedia({ item, isFirst = false, scale, y, className = '' }) {
   return (
-    <div ref={ref} className="relative w-full mb-20">
-      {/* The Window */}
-      <div className="w-full h-[55dvh] relative" style={{ overflow: "hidden" }}>
-        <motion.div style={{ y: imageY, height: "120%" }} className="absolute inset-0 top-[-10%]">
-          <img 
-            src={item.imageSrc} 
-            alt={item.name} 
-            loading={isFirst ? undefined : "lazy"}
-            className="w-full h-full object-cover"
-          />
-        </motion.div>
-      </div>
+    <motion.div
+      style={{ scale, y }}
+      className={`w-full h-full will-change-transform ${className}`}
+    >
+      {item.videoSrc ? (
+        <video
+          src={item.videoSrc}
+          autoPlay
+          muted
+          loop
+          playsInline
+          webkit-playsinline="true"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <img
+          src={item.imageSrc}
+          alt={item.name}
+          loading={isFirst ? undefined : 'lazy'}
+          className="w-full h-full object-cover"
+        />
+      )}
+    </motion.div>
+  );
+}
 
-      {/* The Overlap */}
-      <motion.div 
-        className={`bg-[#F4EFEA] relative z-10 p-6 shadow-xl shadow-[#2A2118]/10 w-[85%] -mt-16 ${isLeft ? 'ml-4' : 'ml-auto mr-4'}`}
-        initial={{ y: 20 }}
-        whileInView={{ y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
-        style={{ opacity: 1 }}
-      >
-        <span className="font-sans text-[9px] tracking-[0.45em] uppercase text-[#2A2118]/60 block mb-2">
+function MobileDishCard({ item, indexStr, accentBorder = 'border-l-2 border-[#2A2118]/30', showWatermark = false }) {
+  return (
+    <div className={`bg-[#F4EFEA] p-6 sm:p-7 shadow-xl shadow-[#2A2118]/10 ${accentBorder} relative`}>
+      {showWatermark && (
+        <span className="font-display text-[#2A2118]/10 text-6xl absolute top-3 right-4 select-none pointer-events-none">
+          {indexStr}
+        </span>
+      )}
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-sans text-[9px] tracking-[0.45em] uppercase text-[#2A2118]/60 font-semibold">
           {item.category}
         </span>
-        <h3 className="font-display text-3xl text-[#2A2118] mb-1">
-          {item.name}
-        </h3>
-        <p className="font-script italic text-[#2A2118]/60 mb-3" style={{ fontSize: '1rem' }}>
-          {item.nameKr}
-        </p>
-        <p className="font-sans text-[#2A2118] leading-relaxed mb-4" style={{ fontSize: '0.8rem', letterSpacing: '0.05em' }}>
-          {item.description}
-        </p>
-        <div className="flex items-baseline gap-3">
-          <span className="font-display text-[#8B2626] text-xl">
-            ₹{item.priceINR}
+        <span className="font-sans text-[10px] tracking-widest text-[#2A2118]/40 font-medium">
+          {indexStr}
+        </span>
+      </div>
+
+      <h3 className="font-display text-3xl sm:text-4xl text-[#2A2118] leading-[0.95] tracking-tight mb-1">
+        {item.name}
+      </h3>
+      <p className="font-script italic text-[#2A2118]/60 text-[1.05rem] mb-3">
+        {item.nameKr}
+      </p>
+      <p className="font-sans text-[#2A2118] text-[0.8rem] leading-relaxed tracking-[0.035em] mb-4 max-w-[34ch]">
+        {item.description}
+      </p>
+
+      <div className="flex items-baseline gap-3 pt-2 border-t border-[#2A2118]/10">
+        <span className="font-display text-2xl text-[#8B2626]">
+          ₹{item.priceINR}
+        </span>
+        <span className="font-sans text-[10px] tracking-widest text-[#2A2118]/45">
+          · ₩{item.priceKRW?.toLocaleString()}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MobileEditorialItem({ item, index }) {
+  const ref = useRef(null);
+  const isFirst = index === 0;
+  const indexStr = `0${index + 1}`;
+
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start end', 'end start'],
+  });
+
+  // Continuous Slow Zoom (Ken Burns): scale 1.0 to 1.15
+  const mediaScale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
+  const macroMediaScale = useTransform(scrollYProgress, [0, 1], [1.08, 1.22]);
+  const mediaY = useTransform(scrollYProgress, [0, 1], ['-5%', '5%']);
+
+  // Parallax Text: -30px to 30px offset against scrolling media
+  const textParallaxY = useTransform(scrollYProgress, [0, 1], [30, -30]);
+
+  // Safe reveal parameters: start visible at opacity 1, animate y offset
+  const cardMotionProps = {
+    initial: { opacity: 1, y: 40 },
+    whileInView: { y: 0 },
+    viewport: { once: true, amount: 0.1 },
+    transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] },
+  };
+
+  // ── ITEM 1: THE CINEMATIC OPENER (Full-bleed edge-to-edge video/image, heavily indented overlap) ──
+  if (index === 0) {
+    return (
+      <div ref={ref} className="relative w-full mb-28">
+        <div className="w-full h-[65dvh] relative overflow-hidden">
+          <MobileMedia
+            item={item}
+            isFirst={isFirst}
+            scale={mediaScale}
+            y={mediaY}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(42,33,24,0.45)] via-transparent to-transparent pointer-events-none" />
+        </div>
+
+        <div className="relative w-full px-4 -mt-20 z-10 flex justify-start">
+          <motion.div style={{ y: textParallaxY }} className="w-[88%] ml-2">
+            <motion.div {...cardMotionProps}>
+              <MobileDishCard
+                item={item}
+                indexStr={indexStr}
+                accentBorder="border-l-2 border-[#2A2118]/30"
+                showWatermark
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ITEM 2: THE EDITORIAL PORTRAIT (Right-pushed 75% portrait, typography in empty left space with giant '02') ──
+  if (index === 1) {
+    return (
+      <div ref={ref} className="relative w-full mb-28">
+        <div className="w-full relative flex justify-end">
+          {/* Dramatic index watermark in the empty left space */}
+          <span className="font-display text-[#2A2118]/10 text-8xl sm:text-9xl absolute left-3 top-2 select-none pointer-events-none z-0">
+            02
           </span>
-          <span className="font-sans text-[10px] tracking-widest text-[#2A2118]/40">
-            · ₩{item.priceKRW?.toLocaleString()}
+
+          {/* Narrow floating portrait image pushed to the right */}
+          <div className="w-[75%] h-[50dvh] relative overflow-hidden shadow-lg rounded-sm">
+            <MobileMedia
+              item={item}
+              scale={mediaScale}
+              y={mediaY}
+            />
+          </div>
+        </div>
+
+        {/* Typography sitting in the empty left space, overlapping slightly */}
+        <div className="relative w-full px-4 -mt-24 z-10 flex justify-start">
+          <motion.div style={{ y: textParallaxY }} className="w-[82%] ml-3">
+            <motion.div {...cardMotionProps}>
+              <MobileDishCard
+                item={item}
+                indexStr={indexStr}
+                accentBorder="border-t-2 border-[#8B2626]/40"
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ITEM 3: THE MACRO ZOOM (Extreme close-up 40dvh, detached card floating below staggered right) ──
+  if (index === 2) {
+    return (
+      <div ref={ref} className="relative w-full mb-28">
+        {/* Full-width shorter macro zoom */}
+        <div className="w-full h-[40dvh] relative overflow-hidden shadow-sm">
+          <MobileMedia
+            item={item}
+            scale={macroMediaScale}
+            y={mediaY}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(42,33,24,0.25)] pointer-events-none" />
+        </div>
+
+        {/* Detached floating text card staggered to the right */}
+        <div className="relative w-full px-4 mt-6 z-10 flex justify-end">
+          <motion.div style={{ y: textParallaxY }} className="w-[85%] mr-1 relative">
+            <span className="font-display text-[#2A2118]/10 text-7xl sm:text-8xl absolute -top-10 left-3 select-none pointer-events-none">
+              03
+            </span>
+            <motion.div {...cardMotionProps}>
+              <MobileDishCard
+                item={item}
+                indexStr={indexStr}
+                accentBorder="border-r-2 border-[#2A2118]/30"
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ITEM 4: INVERTED EDITORIAL PORTRAIT (Left-pushed 75% portrait, typography in empty right space with giant '04') ──
+  if (index === 3) {
+    return (
+      <div ref={ref} className="relative w-full mb-28">
+        <div className="w-full relative flex justify-start">
+          {/* Narrow floating portrait image pushed to the left */}
+          <div className="w-[75%] h-[50dvh] relative overflow-hidden shadow-lg rounded-sm">
+            <MobileMedia
+              item={item}
+              scale={mediaScale}
+              y={mediaY}
+            />
+          </div>
+
+          {/* Dramatic index watermark in the empty right space */}
+          <span className="font-display text-[#2A2118]/10 text-8xl sm:text-9xl absolute right-3 top-2 select-none pointer-events-none z-0">
+            04
           </span>
         </div>
+
+        {/* Typography sitting in the empty right space, overlapping slightly */}
+        <div className="relative w-full px-4 -mt-24 z-10 flex justify-end">
+          <motion.div style={{ y: textParallaxY }} className="w-[82%] mr-3">
+            <motion.div {...cardMotionProps}>
+              <MobileDishCard
+                item={item}
+                indexStr={indexStr}
+                accentBorder="border-b-2 border-[#2A2118]/30"
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ITEM 5: THE MOTION FEATURE (Full-bleed cinematic video loop with bottom-right floating placard) ──
+  if (index === 4) {
+    return (
+      <div ref={ref} className="relative w-full mb-28">
+        <div className="w-full h-[62dvh] relative overflow-hidden">
+          <MobileMedia
+            item={item}
+            scale={mediaScale}
+            y={mediaY}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(42,33,24,0.4)] via-transparent to-transparent pointer-events-none" />
+        </div>
+
+        <div className="relative w-full px-4 -mt-20 z-10 flex justify-end">
+          <motion.div style={{ y: textParallaxY }} className="w-[88%] mr-2">
+            <motion.div {...cardMotionProps}>
+              <MobileDishCard
+                item={item}
+                indexStr={indexStr}
+                accentBorder="border-l-2 border-[#8B2626]/40"
+                showWatermark
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ITEM 6: THE HAUTE FINALE (Centered floating video portrait, detached card staggered left) ──
+  return (
+    <div ref={ref} className="relative w-full mb-20">
+      <div className="w-[82%] h-[48dvh] mx-auto relative overflow-hidden shadow-xl rounded-sm">
+        <MobileMedia
+          item={item}
+          scale={mediaScale}
+          y={mediaY}
+        />
+      </div>
+
+      <div className="relative w-full px-4 mt-6 z-10 flex justify-start">
+        <motion.div style={{ y: textParallaxY }} className="w-[86%] ml-2 relative">
+          <span className="font-display text-[#2A2118]/10 text-7xl absolute -top-10 right-4 select-none pointer-events-none">
+            06
+          </span>
+          <motion.div {...cardMotionProps}>
+            <MobileDishCard
+              item={item}
+              indexStr={indexStr}
+              accentBorder="border-t-2 border-[#2A2118]/30"
+            />
+          </motion.div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function MobileMenuHeader() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-5% 0px' });
+
+  return (
+    <div ref={ref} className="px-5 pt-20 mb-16 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 1, y: 12 }}
+        animate={isInView ? { y: 0 } : { y: 12 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="flex items-center justify-between pb-3 mb-5 border-b border-[#2A2118]/15"
+      >
+        <span className="font-sans text-[10px] tracking-[0.45em] uppercase text-[#2A2118]/50">
+          메뉴 · OUR MENU
+        </span>
+        <span className="font-sans text-[9px] tracking-[0.25em] uppercase text-[#2A2118]/40">
+          EDITION 2026
+        </span>
       </motion.div>
+
+      <motion.h2
+        className="font-display text-5xl sm:text-6xl text-[#1A1A1A] leading-[0.88] tracking-tight"
+        initial={{ opacity: 1, y: 20 }}
+        animate={isInView ? { y: 0 } : { y: 20 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+      >
+        Our Menu
+      </motion.h2>
+
+      <motion.p
+        className="font-script italic text-xl text-[#2A2118]/55 mt-2"
+        initial={{ opacity: 1, y: 16 }}
+        animate={isInView ? { y: 0 } : { y: 16 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+      >
+        The Editorial Lookbook
+      </motion.p>
     </div>
   );
 }
 
 function MobileMenu({ items }) {
   return (
-    <div className="w-full pb-20 bg-[#F9F8F6]">
-      <div className="px-5 pt-24 overflow-hidden">
-        <MenuSectionHeader />
-      </div>
+    <div className="w-full max-w-[100vw] overflow-x-clip pb-24 bg-[#F9F8F6]">
+      <MobileMenuHeader />
       <div className="flex flex-col w-full">
         {items.map((item, i) => (
-          <MobileMenuItem key={item.id} item={item} index={i} />
+          <MobileEditorialItem key={item.id} item={item} index={i} />
         ))}
       </div>
     </div>
@@ -687,7 +956,7 @@ export default function MenuSpread() {
   const items = editorialMenuItems;
 
   return (
-    <section id="menu" className="w-full">
+    <section id="menu" className="w-full max-w-[100vw] overflow-x-clip">
       {/* DESKTOP ONLY - 100% Untouched */}
       <div className="hidden lg:block w-full">
         <DesktopMenu items={items} /> 
