@@ -7,7 +7,6 @@ import {
   useSpring,
 } from 'framer-motion';
 import { Volume2, VolumeX } from 'lucide-react';
-import { useIsMobile } from '../../hooks/useIsMobile';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Story Chapters Data — 6-chapter editorial narrative matching assets/stories/
@@ -154,7 +153,7 @@ const SEASONS_FONT = {
 // ─────────────────────────────────────────────────────────────────────────────
 function CinematicReveal({ children, delay = 0, className = '', style = {} }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.1 });
+  const isInView = useInView(ref, { once: true, margin: '-5% 0px' });
 
   return (
     <motion.div
@@ -205,6 +204,24 @@ function ScrollStaggerBlock({ children, className = '' }) {
   );
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(max-width: 767px)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  return isMobile;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ParallaxPullQuote — Oversized italicized pull-quote overlapping boundaries
 // Micro-parallax moves 10-15% faster vertically; STRICTLY DISABLED ON MOBILE
@@ -224,7 +241,7 @@ function ParallaxPullQuote({ quote, alignRight = false, chapterRef }) {
   return (
     <motion.blockquote
       style={{ y: isMobile ? 0 : y, willChange: isMobile ? 'auto' : 'transform' }}
-      className={`relative my-10 md:my-14 lg:my-16 z-20 max-w-[100vw] sm:max-w-[44ch] overflow-hidden ${
+      className={`relative my-10 md:my-14 lg:my-16 z-20 max-w-[44ch] ${
         alignRight
           ? 'text-right md:-mr-8 lg:-mr-16 xl:-mr-20 ml-auto'
           : 'text-left md:-ml-8 lg:-ml-16 xl:-ml-20 mr-auto'
@@ -317,13 +334,6 @@ function StoryVideo({ src, alt, objectPosition = 'center 20%' }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function StoryImage({ src, alt, objectPosition = 'center 20%' }) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const imgRef = useRef(null);
-
-  useEffect(() => {
-    if (imgRef.current?.complete) {
-      setIsLoaded(true);
-    }
-  }, [src]);
 
   return (
     <div className="relative w-full h-full bg-[#EAE6DF]/60 overflow-hidden group">
@@ -331,9 +341,9 @@ function StoryImage({ src, alt, objectPosition = 'center 20%' }) {
         <div className="absolute inset-0 bg-gradient-to-r from-[#EAE6DF] via-[#F3EFE9] to-[#EAE6DF] animate-pulse" />
       )}
       <img
-        ref={imgRef}
         src={src}
         alt={alt}
+        loading="lazy"
         onLoad={() => setIsLoaded(true)}
         className={`w-full h-full object-cover transition-all duration-[1100ms] ease-out group-hover:scale-[1.04] ${
           isLoaded ? 'opacity-100' : 'opacity-0'
@@ -555,24 +565,24 @@ function StickyChapterMobile({ chapter }) {
   const chapterRef = useRef(null);
 
   return (
-    <div ref={chapterRef} className="md:hidden flex flex-col mb-16 sm:mb-24 last:mb-8 w-full max-w-[100vw] overflow-x-hidden">
+    <div ref={chapterRef} className="md:hidden flex flex-col mb-24 last:mb-8">
       {/* Mobile Media: Signature clip-path wipe reveal & top-weighted positioning */}
       <CinematicReveal
         delay={0.05}
-        className="relative w-full max-w-[100vw] aspect-[4/5] min-h-[300px] overflow-hidden rounded-sm shadow-md border-y border-[#2A2118]/10"
+        className="relative w-full h-[54vh] min-h-[340px] overflow-hidden rounded-sm shadow-lg border border-[#2A2118]/10"
       >
         <div className="relative w-full h-full">
           {chapter.media.type === 'video' ? (
             <StoryVideo
               src={chapter.media.src}
               alt={chapter.media.alt}
-              objectPosition="center top"
+              objectPosition={chapter.media.objectPosition}
             />
           ) : (
             <StoryImage
               src={chapter.media.src}
               alt={chapter.media.alt}
-              objectPosition="center top"
+              objectPosition={chapter.media.objectPosition}
             />
           )}
 
@@ -598,9 +608,9 @@ function StickyChapterMobile({ chapter }) {
         </div>
       </CinematicReveal>
 
-      {/* Mobile Overlapping Text Card - Opaque Paper Tint (no backdrop blur) with elegant px-6 py-8 */}
+      {/* Mobile Overlapping Text Card - Opaque Textured Paper (no backdrop blur) */}
       <div
-        className="relative z-10 -mt-10 sm:-mt-14 mx-4 sm:mx-6 px-6 py-8 bg-[#F4EFEA] rounded-sm shadow-lg shadow-[#2A2118]/10 border border-[#2A2118]/12"
+        className="relative z-10 -mt-[14%] mx-3 sm:mx-6 p-7 sm:p-9 bg-[#F9F8F6] rounded-sm shadow-2xl border border-[#2A2118]/15"
         style={{
           backgroundImage:
             'radial-gradient(rgba(42, 33, 24, 0.05) 1px, transparent 0)',
@@ -614,8 +624,8 @@ function StickyChapterMobile({ chapter }) {
 
         {/* Title in The Seasons */}
         <h3
-          className="text-[#1A1A1A] leading-[0.94] mb-5 font-normal text-4xl"
-          style={SEASONS_FONT}
+          className="text-[#1A1A1A] leading-[0.94] mb-5 font-normal"
+          style={{ fontSize: 'clamp(2.3rem, 8vw, 3.2rem)', ...SEASONS_FONT }}
         >
           {chapter.title}
         </h3>
@@ -635,7 +645,7 @@ function StickyChapterMobile({ chapter }) {
         <blockquote className="my-6 border-l-2 border-[#8B2626] pl-4 py-1">
           <p
             className="text-[#2A2118] italic leading-[1.25]"
-            style={{ fontSize: 'clamp(1.15rem, 4.2vw, 1.6rem)', ...SEASONS_FONT }}
+            style={{ fontSize: 'clamp(1.25rem, 4.6vw, 1.6rem)', ...SEASONS_FONT }}
           >
             &ldquo;{chapter.pullQuote}&rdquo;
           </p>
@@ -679,12 +689,12 @@ function StickyChapterMobile({ chapter }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function StoriesSectionHeader() {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.1 });
+  const isInView = useInView(ref, { once: true, margin: '-5% 0px' });
   const title = 'Our Stories';
   const chars = title.split('');
 
   return (
-    <div ref={ref} className="mb-14 md:mb-28 overflow-hidden px-4 sm:px-8 md:px-12 lg:px-16">
+    <div ref={ref} className="mb-20 md:mb-28 overflow-hidden px-6 md:px-12 lg:px-16">
       {/* Eyebrow */}
       <motion.span
         className="font-sans text-[10px] tracking-[0.55em] uppercase opacity-45 block mb-5 font-semibold"
@@ -698,7 +708,7 @@ function StoriesSectionHeader() {
       {/* Main Title Character-by-Character Wipe */}
       <h2
         className="leading-[0.88] overflow-hidden block"
-        style={{ fontSize: 'clamp(2.75rem, 11vw, 12rem)', ...SEASONS_FONT }}
+        style={{ fontSize: 'clamp(5rem, 11vw, 12rem)', ...SEASONS_FONT }}
         aria-label={title}
       >
         {chars.map((ch, i) => (
@@ -752,7 +762,7 @@ export default function StoriesSection() {
   return (
     <section
       id="stories"
-      className="relative text-[#1A1A1A] overflow-x-hidden max-w-[100vw]"
+      className="relative text-[#1A1A1A]"
       style={{ willChange: 'transform' }}
     >
       {/* Paper wash allowing bg-paper.jpg texture to breathe organically through generous whitespace */}
@@ -797,7 +807,7 @@ export default function StoriesSection() {
         </div>
 
         {/* Section Colophon / End Seal */}
-        <div className="px-4 sm:px-8 md:px-12 lg:px-16 mt-14 md:mt-28">
+        <div className="px-6 md:px-12 lg:px-16 mt-20 md:mt-28">
           <div className="h-px w-full bg-[#2A2118]/15 mb-8" />
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-sans text-[9px] tracking-[0.35em] uppercase opacity-45">
             <span>Himal Tree Chronicles &middot; Volume I</span>

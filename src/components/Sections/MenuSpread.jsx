@@ -1,4 +1,8 @@
-import { useRef } from 'react';
+import {
+  useRef,
+  useEffect,
+  useState,
+} from 'react';
 import {
   motion,
   useInView,
@@ -7,14 +11,21 @@ import {
   useSpring,
 } from 'framer-motion';
 import { editorialMenuItems } from '../../data/content';
-import { useIsMobile } from '../../hooks/useIsMobile';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ParallaxMedia — the image or video inside a card, with scroll-driven y-shift
 // ─────────────────────────────────────────────────────────────────────────────
 function ParallaxMedia({ src, videoSrc, alt, strength = 15, objectPosition = 'center' }) {
   const ref = useRef(null);
-  const isMobile = useIsMobile();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mq.matches);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -54,6 +65,7 @@ function ParallaxMedia({ src, videoSrc, alt, strength = 15, objectPosition = 'ce
           <img
             src={src}
             alt={alt}
+            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-[1.06]"
             style={{ objectPosition }}
           />
@@ -68,7 +80,7 @@ function ParallaxMedia({ src, videoSrc, alt, strength = 15, objectPosition = 'ce
 // ─────────────────────────────────────────────────────────────────────────────
 function CinematicReveal({ children, delay = 0, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.1 });
+  const isInView = useInView(ref, { once: true, margin: '-8% 0px' });
 
   return (
     <motion.div
@@ -96,7 +108,7 @@ function CinematicReveal({ children, delay = 0, className = '' }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function TextReveal({ children, delay = 0, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.1 });
+  const isInView = useInView(ref, { once: true, margin: '-6% 0px' });
 
   return (
     <motion.div
@@ -166,13 +178,13 @@ function DishMeta({ item, dark = false, delay = 0, align = 'left' }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function MenuSectionHeader() {
   const ref    = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.1 });
+  const isInView = useInView(ref, { once: true, margin: '-5% 0px' });
 
   const title  = 'Our Menu';
   const chars  = title.split('');
 
   return (
-    <div ref={ref} className="mb-14 md:mb-32 overflow-hidden">
+    <div ref={ref} className="mb-24 md:mb-32 overflow-hidden">
       <motion.span
         className="font-sans text-[10px] tracking-[0.5em] uppercase opacity-40 block mb-5"
         initial={{ opacity: 0, y: 12 }}
@@ -185,7 +197,7 @@ function MenuSectionHeader() {
       {/* Big title — character-by-character clip wipe */}
       <h2
         className="font-display leading-[0.88] overflow-hidden block"
-        style={{ fontSize: 'clamp(2.75rem, 11vw, 12rem)' }}
+        style={{ fontSize: 'clamp(5rem, 11vw, 12rem)' }}
         aria-label={title}
       >
         {chars.map((ch, i) => (
@@ -480,75 +492,77 @@ function TabletGrid({ items }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MOBILE STACK — single-column vertical editorial stack (<768px)
+// MOBILE STACK — vertical, alternating image alignment
 // ─────────────────────────────────────────────────────────────────────────────
 function MobileStack({ items }) {
   return (
-    <div className="grid grid-cols-1 gap-14 sm:gap-20 md:hidden">
-      {items.map((item, i) => (
-        <div key={item.id} className="flex flex-col gap-0">
-          {/* Label + number row */}
-          <div className="flex items-center justify-between px-6 mb-3">
-            <span className="font-sans text-[9px] tracking-[0.45em] uppercase opacity-40 font-semibold">
-              {item.category}
-            </span>
-            <span
-              className="font-display text-[rgba(26,26,26,0.1)]"
-              style={{ fontSize: '3rem', lineHeight: 1 }}
+    <div className="flex flex-col gap-20 md:hidden">
+      {items.map((item, i) => {
+        const isEven = i % 2 === 0;
+        return (
+          <div key={item.id} className="flex flex-col gap-5">
+            {/* Label + number row */}
+            <div className={`flex items-center gap-3 ${isEven ? '' : 'flex-row-reverse'}`}>
+              <span
+                className="font-display text-[rgba(26,26,26,0.08)]"
+                style={{ fontSize: '4rem', lineHeight: 1 }}
+              >
+                0{i + 1}
+              </span>
+              <span className="font-sans text-[9px] tracking-[0.45em] uppercase opacity-40">
+                {item.category}
+              </span>
+            </div>
+
+            {/* Image — full width with offset clip on alternate sides */}
+            <div
+              className={`relative overflow-hidden rounded-sm ${isEven ? 'mr-6' : 'ml-6'}`}
+              style={{ aspectRatio: '4/5' }}
             >
-              0{i + 1}
-            </span>
-          </div>
+              <CinematicReveal className="absolute inset-0" delay={0}>
+                <div className="absolute inset-0">
+                  <ParallaxMedia
+                    src={item.imageSrc}
+                    videoSrc={item.videoSrc}
+                    alt={item.name}
+                    strength={0}
+                  />
+                </div>
+              </CinematicReveal>
+            </div>
 
-          {/* Image — full width edge-to-edge editorial container */}
-          <div
-            className="relative overflow-hidden w-[calc(100%+2rem)] sm:w-[calc(100%+4rem)] max-w-[100vw] aspect-[4/5] shadow-md border-y border-[#2A2118]/10 -mx-4 sm:-mx-8 min-h-[300px]"
-          >
-            <CinematicReveal className="absolute inset-0" delay={0}>
-              <div className="absolute inset-0">
-                <ParallaxMedia
-                  src={item.imageSrc}
-                  videoSrc={item.videoSrc}
-                  alt={item.name}
-                  strength={0}
-                />
-              </div>
-            </CinematicReveal>
+            {/* Text block */}
+            <div className={`px-4 ${isEven ? 'pr-10' : 'pl-10'}`}>
+              <TextReveal delay={0.1}>
+                <h3
+                  className="font-display text-[#1A1A1A] leading-[0.92] mb-1"
+                  style={{ fontSize: 'clamp(2.6rem, 10vw, 4rem)' }}
+                >
+                  {item.name}
+                </h3>
+                <p className="font-script italic text-[#1A1A1A] opacity-40 mb-4" style={{ fontSize: '1.1rem' }}>
+                  {item.nameKr}
+                </p>
+                <p
+                  className="font-sans text-[#2A2118] leading-relaxed mb-5"
+                  style={{ fontSize: '0.72rem', letterSpacing: '0.06em' }}
+                >
+                  {item.description}
+                </p>
+                <div className="flex items-baseline gap-3">
+                  <span className="font-display text-[#8B2626]" style={{ fontSize: '2rem' }}>
+                    ₹{item.priceINR}
+                  </span>
+                  <span className="font-sans text-[10px] tracking-widest opacity-40">
+                    · ₩{item.priceKRW?.toLocaleString()}
+                  </span>
+                </div>
+                <div className="h-px w-10 bg-[rgba(26,26,26,0.2)] mt-4" />
+              </TextReveal>
+            </div>
           </div>
-
-          {/* Text block — elegant padding for premium feel */}
-          <div className="px-6 py-8">
-            <TextReveal delay={0.1}>
-              <h3
-                className="font-display text-[#1A1A1A] leading-[0.95] mb-1 text-4xl"
-                style={{ fontFamily: 'var(--font-seasons, "The Seasons", "Cormorant Garamond", "Playfair Display", serif)' }}
-              >
-                {item.name}
-              </h3>
-              <p
-                className="font-script italic text-[#1A1A1A] opacity-40 mb-4 text-lg"
-                style={{ fontFamily: 'var(--font-seasons, "The Seasons", "Cormorant Garamond", "Playfair Display", serif)' }}
-              >
-                {item.nameKr}
-              </p>
-              <p
-                className="font-sans text-[#2A2118] leading-relaxed mb-5 text-[0.82rem] sm:text-[0.85rem] tracking-[0.03em]"
-              >
-                {item.description}
-              </p>
-              <div className="flex items-baseline gap-3">
-                <span className="font-display text-[#8B2626] text-2xl sm:text-3xl">
-                  ₹{item.priceINR}
-                </span>
-                <span className="font-sans text-[10px] tracking-widest opacity-40">
-                  · ₩{item.priceKRW?.toLocaleString()}
-                </span>
-              </div>
-              <div className="h-px w-10 bg-[rgba(26,26,26,0.2)] mt-4" />
-            </TextReveal>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -562,7 +576,7 @@ export default function MenuSpread() {
   return (
     <section
       id="menu"
-      className="relative bg-[#F9F8F6] text-[#1A1A1A] py-12 md:py-36 px-4 sm:px-8 md:px-10 lg:px-16 overflow-hidden max-w-[100vw]"
+      className="relative bg-[#F9F8F6] text-[#1A1A1A] py-28 md:py-36 px-5 md:px-10 lg:px-16 overflow-hidden"
     >
       {/* Subtle grain texture overlay */}
       <div
@@ -585,12 +599,12 @@ export default function MenuSpread() {
         {/* Tablet: 2-col staggered layout */}
         <TabletGrid items={items} />
 
-        {/* Mobile: single-column vertical editorial stack */}
+        {/* Mobile: vertical alternating stack */}
         <MobileStack items={items} />
       </div>
 
       {/* Bottom hairline */}
-      <div className="max-w-[1600px] mx-auto mt-14 md:mt-24">
+      <div className="max-w-[1600px] mx-auto mt-24">
         <div className="h-px w-full bg-[rgba(26,26,26,0.12)]" />
       </div>
     </section>

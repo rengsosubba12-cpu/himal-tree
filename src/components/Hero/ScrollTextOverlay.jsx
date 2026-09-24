@@ -17,14 +17,14 @@ function QuoteItem({ quote, scrollProgress }) {
   return (
     <motion.div
       style={{ opacity, y }}
-      className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 text-center pointer-events-none select-none"
+      className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12 text-center pointer-events-none select-none"
     >
       <div className="editorial-scroll-container max-w-4xl mx-auto w-full flex flex-col items-center justify-center text-center">
         <h2
           className="editorial-scroll-title font-seasons font-bold tracking-tight text-center inline-block"
           style={{
             fontFamily: "'The Seasons', 'Cormorant Garamond', 'Playfair Display', serif",
-            fontSize: 'clamp(1.75rem, 5vw, 6rem)',
+            fontSize: 'clamp(2.5rem, 6vw, 6rem)',
             lineHeight: 1.15,
             background: 'linear-gradient(180deg, #FFFFFF 0%, #F5C2CE 100%)',
             WebkitBackgroundClip: 'text',
@@ -74,7 +74,7 @@ function QuoteItem({ quote, scrollProgress }) {
 
 export default function ScrollTextOverlay({ scrollProgress }) {
   return (
-    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden flex items-center justify-center max-w-[100vw]">
+    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden flex items-center justify-center">
       {heroQuotes.map((quote, index) => (
         <QuoteItem key={index} quote={quote} scrollProgress={scrollProgress} />
       ))}

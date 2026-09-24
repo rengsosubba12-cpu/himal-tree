@@ -11,7 +11,7 @@ const MagazineNav = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Toggle navigation menu"
-        className="fixed top-6 right-6 md:top-8 md:right-8 z-50 flex flex-col justify-center items-center w-10 h-10 cursor-pointer"
+        className="fixed top-8 right-8 z-50 flex flex-col justify-center items-center w-10 h-10 cursor-pointer"
         style={{ cursor: 'pointer' }}
       >
         <motion.span
@@ -51,23 +51,22 @@ const MagazineNav = () => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 80, damping: 20 }}
-            className="fixed inset-0 z-40 bg-[#F9F8F6] flex flex-col justify-between pt-24 md:pt-32 pb-12 px-6 md:px-16 overflow-y-auto overflow-x-hidden max-w-[100vw]"
+            className="fixed inset-0 z-40 bg-[#F9F8F6] flex flex-col justify-between pt-32 pb-12 px-8 md:px-16 overflow-y-auto"
           >
             <div className="flex flex-col w-full max-w-7xl mx-auto">
               {navItems?.map((item, index) => (
                 <motion.a
                   key={item.id || index}
                   href={item.href || '#'}
-                  onClick={() => setIsOpen(false)}
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 50 }}
                   transition={{ delay: 0.1 * (index + 1), type: 'spring', stiffness: 100, damping: 20 }}
                   whileHover={{ x: 20, color: '#8B2626' }}
-                  className="group block border-b border-[rgba(26,26,26,0.15)] py-5 md:py-8 text-[#1A1A1A] no-underline"
+                  className="group block border-b border-[rgba(26,26,26,0.15)] py-6 md:py-8 text-[#1A1A1A] no-underline"
                 >
                   <div className="flex flex-col">
-                    <span className="font-display text-[clamp(2.2rem,10vw,4.5rem)] md:text-[8vw] leading-tight mb-1 transition-colors duration-300">
+                    <span className="font-display text-[12vw] md:text-[8vw] leading-tight mb-1 transition-colors duration-300">
                       {item.label}
                     </span>
                     <span className="font-sans text-base tracking-[0.4em] uppercase opacity-40">

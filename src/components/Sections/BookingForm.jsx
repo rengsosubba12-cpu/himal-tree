@@ -7,7 +7,7 @@ export default function BookingForm({
   phoneNumber = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_WHATSAPP_PHONE) || '+919883597341'
 }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
 
   const initialFormData = {
     name: '',
@@ -158,13 +158,13 @@ export default function BookingForm({
   };
 
   return (
-    <section id="book" className="relative bg-[#F9F8F6] text-[#1A1A1A] py-16 sm:py-24 md:py-32 px-4 sm:px-8 md:px-16 min-h-screen flex items-center overflow-x-hidden max-w-[100vw]">
-      <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
+    <section id="book" className="relative bg-[#F9F8F6] text-[#1A1A1A] py-32 px-6 md:px-16 min-h-screen flex items-center">
+      <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-16">
         
         {/* Left Column */}
         <div className="flex flex-col justify-center">
           <span className="font-sans text-xs tracking-[0.4em] uppercase opacity-50 block mb-4">예약 &middot; RESERVATION</span>
-          <h2 className="font-display text-[clamp(2.5rem,8vw,4rem)] md:text-[5vw] leading-none text-[#1A1A1A]">Book a Table</h2>
+          <h2 className="font-display text-[10vw] md:text-[5vw] leading-none text-[#1A1A1A]">Book a Table</h2>
           <p className="font-script italic text-2xl opacity-50 mt-4 text-[#1A1A1A]">테이블 예약</p>
           
           <div className="mt-12 space-y-6">
@@ -254,7 +254,7 @@ export default function BookingForm({
               animate={isInView ? "visible" : "hidden"}
               transition={{ delay: formFields.length * 0.1 }}
               type="submit"
-              className="mt-8 md:mt-12 w-full sm:w-fit justify-center font-display text-lg tracking-wider border border-[#1A1A1A] py-4 px-8 sm:px-12 text-[#1A1A1A] flex items-center gap-4 cursor-pointer group"
+              className="mt-12 w-fit font-display text-lg tracking-wider border border-[#1A1A1A] py-4 px-12 text-[#1A1A1A] flex items-center gap-4 cursor-pointer group"
               whileHover={{ 
                 backgroundColor: '#1A1A1A', 
                 color: '#F9F8F6',
@@ -279,7 +279,7 @@ export default function BookingForm({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-            className="fixed bottom-6 sm:bottom-8 right-4 sm:right-6 md:right-12 z-50 max-w-sm w-[calc(100vw-2rem)] bg-[#1A1A1A] text-[#F9F8F6] p-4 sm:p-5 shadow-2xl border border-[rgba(249,248,246,0.15)] flex items-start gap-4"
+            className="fixed bottom-8 right-6 md:right-12 z-50 max-w-sm w-[calc(100vw-3rem)] bg-[#1A1A1A] text-[#F9F8F6] p-5 shadow-2xl border border-[rgba(249,248,246,0.15)] flex items-start gap-4"
             role="alert"
             aria-live="polite"
           >

@@ -27,7 +27,7 @@ function App() {
   const ramenProgress = useTransform(scrollYProgress, [0.24, 1.0], [0, 1]);
 
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden">
+    <>
       {/* Persistent textured paper background for continuous cinematic feel */}
       <div
         className="fixed inset-0 pointer-events-none -z-10 bg-cover bg-center"
@@ -68,8 +68,8 @@ function App() {
       <BookingForm />
 
       {/* Footer */}
-      <footer className="bg-paper text-ink py-14 md:py-20 px-4 sm:px-8 md:px-16 border-t border-hairline overflow-x-hidden max-w-[100vw]">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+      <footer className="bg-paper text-ink py-20 px-6 md:px-16 border-t border-hairline">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
           {/* Brand */}
           <div>
             <h3 className="font-display text-3xl mb-2">{cafeInfo.name}</h3>
@@ -98,7 +98,7 @@ function App() {
           </div>
         </div>
       </footer>
-    </div>
+    </>
   );
 }
 

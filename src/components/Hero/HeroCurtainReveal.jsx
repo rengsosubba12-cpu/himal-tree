@@ -62,7 +62,7 @@ export default function HeroCurtainReveal({ scrollProgress }) {
     <motion.div
       ref={containerRef}
       style={{ visibility: containerVisibility }}
-      className="absolute inset-0 z-10 w-full max-w-[100vw] h-full min-h-[100dvh] pointer-events-none select-none overflow-hidden flex items-center justify-center"
+      className="absolute inset-0 z-10 w-full max-w-[100vw] h-full pointer-events-none select-none overflow-hidden flex items-center justify-center"
       aria-label="Himal Tree Curtain Reveal"
     >
       {/* ================================================================
@@ -79,7 +79,7 @@ export default function HeroCurtainReveal({ scrollProgress }) {
         <img
           src="/assets/logo.png"
           alt="Himal Tree — Himal 나무"
-          className="w-[clamp(240px,72vw,720px)] md:w-[clamp(280px,50vw,720px)] max-w-[85vw] h-auto object-contain filter drop-shadow-[0_4px_24px_rgba(139,38,38,0.12)]"
+          className="w-[clamp(280px,50vw,720px)] max-w-[85vw] h-auto object-contain filter drop-shadow-[0_4px_24px_rgba(139,38,38,0.12)]"
           loading="eager"
           decoding="async"
         />
@@ -110,12 +110,12 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           opacity: leftOpacity,
           willChange: 'transform, opacity',
         }}
-        className="absolute top-0 left-0 z-10 origin-top-left pointer-events-none max-w-[100vw]"
+        className="absolute top-0 left-0 z-10 origin-top-left pointer-events-none"
       >
         <img
           src="/assets/covers/CoverLeft.png"
           alt="Sakura Branch Left"
-          className="w-[75vw] sm:w-[60vw] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
+          className="w-[85vw] sm:w-[56vw] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
           loading="eager"
           decoding="async"
         />
@@ -133,12 +133,12 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           opacity: rightOpacity,
           willChange: 'transform, opacity',
         }}
-        className="absolute top-0 right-0 z-10 origin-top-right pointer-events-none max-w-[100vw]"
+        className="absolute top-0 right-0 z-10 origin-top-right pointer-events-none"
       >
         <img
           src="/assets/covers/CoverRight.png"
           alt="Sakura Branch Right"
-          className="w-[75vw] sm:w-[60vw] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
+          className="w-[85vw] sm:w-[56vw] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
           loading="eager"
           decoding="async"
         />
