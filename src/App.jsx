@@ -27,7 +27,7 @@ function App() {
   const ramenProgress = useTransform(scrollYProgress, [0.24, 1.0], [0, 1]);
 
   return (
-    <div className="overflow-x-hidden max-w-[100vw]">
+    <div className="w-full max-w-[100vw] overflow-x-hidden">
       {/* Persistent textured paper background for continuous cinematic feel */}
       <div
         className="fixed inset-0 pointer-events-none -z-10 bg-cover bg-center"

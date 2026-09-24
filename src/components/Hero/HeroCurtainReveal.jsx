@@ -110,7 +110,7 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           opacity: leftOpacity,
           willChange: 'transform, opacity',
         }}
-        className="absolute top-0 left-0 z-10 origin-top-left pointer-events-none"
+        className="absolute top-0 left-0 z-10 origin-top-left pointer-events-none max-w-[100vw]"
       >
         <img
           src="/assets/covers/CoverLeft.png"
@@ -133,7 +133,7 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           opacity: rightOpacity,
           willChange: 'transform, opacity',
         }}
-        className="absolute top-0 right-0 z-10 origin-top-right pointer-events-none"
+        className="absolute top-0 right-0 z-10 origin-top-right pointer-events-none max-w-[100vw]"
       >
         <img
           src="/assets/covers/CoverRight.png"

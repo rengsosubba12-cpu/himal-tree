@@ -2,7 +2,6 @@ import React, { useRef, useMemo, useEffect, useLayoutEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useTransform } from 'framer-motion';
-import { useIsMobile } from '../../hooks/useIsMobile';
 
 /* ================================================================
    Utilities
@@ -740,7 +739,16 @@ function Scene({ phases, isMobile }) {
    ================================================================ */
 
 export default function RamenCanvas3D({ scrollProgress, className = "sticky top-0 h-screen h-[100dvh] w-full" }) {
-  const isMobile = useIsMobile();
+  const [mounted, setMounted] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize(); // Check immediately on mount
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Create phase MotionValues outside Canvas (framer-motion hooks must be in DOM React tree)
   const phases = {
@@ -752,6 +760,9 @@ export default function RamenCanvas3D({ scrollProgress, className = "sticky top-
     done: useTransform(scrollProgress, [0.86, 1.0], [0, 1]),
     steam: useTransform(scrollProgress, [0.88, 1.0], [0, 1]),
   };
+
+  // PREVENT CRASH: Do not render the Canvas until the client has mounted
+  if (!mounted) return <div className="h-screen w-full bg-transparent" />;
 
   return (
     <div className={`${className} pointer-events-none touch-pan-y`}>

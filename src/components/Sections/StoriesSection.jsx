@@ -154,7 +154,7 @@ const SEASONS_FONT = {
 // ─────────────────────────────────────────────────────────────────────────────
 function CinematicReveal({ children, delay = 0, className = '', style = {} }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '0px 0px -50px 0px' });
+  const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   return (
     <motion.div
@@ -224,7 +224,7 @@ function ParallaxPullQuote({ quote, alignRight = false, chapterRef }) {
   return (
     <motion.blockquote
       style={{ y: isMobile ? 0 : y, willChange: isMobile ? 'auto' : 'transform' }}
-      className={`relative my-10 md:my-14 lg:my-16 z-20 max-w-[44ch] overflow-hidden ${
+      className={`relative my-10 md:my-14 lg:my-16 z-20 max-w-[100vw] sm:max-w-[44ch] overflow-hidden ${
         alignRight
           ? 'text-right md:-mr-8 lg:-mr-16 xl:-mr-20 ml-auto'
           : 'text-left md:-ml-8 lg:-ml-16 xl:-ml-20 mr-auto'
@@ -559,7 +559,7 @@ function StickyChapterMobile({ chapter }) {
       {/* Mobile Media: Signature clip-path wipe reveal & top-weighted positioning */}
       <CinematicReveal
         delay={0.05}
-        className="relative w-full max-w-[100vw] aspect-[4/5] overflow-hidden rounded-sm shadow-md border-y border-[#2A2118]/10"
+        className="relative w-full max-w-[100vw] aspect-[4/5] min-h-[300px] overflow-hidden rounded-sm shadow-md border-y border-[#2A2118]/10"
       >
         <div className="relative w-full h-full">
           {chapter.media.type === 'video' ? (
@@ -679,7 +679,7 @@ function StickyChapterMobile({ chapter }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function StoriesSectionHeader() {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '0px 0px -30px 0px' });
+  const isInView = useInView(ref, { once: true, amount: 0.1 });
   const title = 'Our Stories';
   const chars = title.split('');
 

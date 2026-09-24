@@ -68,7 +68,7 @@ function ParallaxMedia({ src, videoSrc, alt, strength = 15, objectPosition = 'ce
 // ─────────────────────────────────────────────────────────────────────────────
 function CinematicReveal({ children, delay = 0, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '0px 0px -50px 0px' });
+  const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   return (
     <motion.div
@@ -96,7 +96,7 @@ function CinematicReveal({ children, delay = 0, className = '' }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function TextReveal({ children, delay = 0, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '0px 0px -30px 0px' });
+  const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   return (
     <motion.div
@@ -166,7 +166,7 @@ function DishMeta({ item, dark = false, delay = 0, align = 'left' }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function MenuSectionHeader() {
   const ref    = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '0px 0px -30px 0px' });
+  const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   const title  = 'Our Menu';
   const chars  = title.split('');
@@ -502,7 +502,7 @@ function MobileStack({ items }) {
 
           {/* Image — full width edge-to-edge editorial container */}
           <div
-            className="relative overflow-hidden w-[calc(100%+2rem)] sm:w-[calc(100%+4rem)] max-w-[100vw] aspect-[4/5] shadow-md border-y border-[#2A2118]/10 -mx-4 sm:-mx-8"
+            className="relative overflow-hidden w-[calc(100%+2rem)] sm:w-[calc(100%+4rem)] max-w-[100vw] aspect-[4/5] shadow-md border-y border-[#2A2118]/10 -mx-4 sm:-mx-8 min-h-[300px]"
           >
             <CinematicReveal className="absolute inset-0" delay={0}>
               <div className="absolute inset-0">
