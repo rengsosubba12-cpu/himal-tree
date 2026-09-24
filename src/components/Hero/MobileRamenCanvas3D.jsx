@@ -1,10 +1,21 @@
-import React, { useRef, useMemo, useEffect, useLayoutEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { Suspense, useRef, useMemo, useEffect, useLayoutEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useTransform } from 'framer-motion';
 
 /* ================================================================
-   Utilities
+   Mobile-Dedicated 3D Ramen Canvas
+
+   This is a completely isolated R3F Canvas for mobile viewports.
+   It shares the 3D scene geometry code but has:
+   - Hardcoded camera parameters (fov: 55, no useThree resize hooks)
+   - A parent container with explicit h-[80dvh] min-h-[500px]
+   - Lower DPR cap for mobile GPU perf
+   - NO CameraRig component — camera is static
+   ================================================================ */
+
+/* ================================================================
+   Utilities (duplicated to keep this file fully self-contained)
    ================================================================ */
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
@@ -24,7 +35,6 @@ function mulberry32(seed) {
    Procedural Textures
    ================================================================ */
 
-// Hand-turned acacia wood grain for the bowl
 function makeWoodTexture() {
   const c = document.createElement('canvas');
   c.width = 1024;
@@ -68,7 +78,6 @@ function makeWoodTexture() {
   return tex;
 }
 
-// Seared beef steak cross-section with marbling
 function makeSteakTexture() {
   const c = document.createElement('canvas');
   c.width = 256;
@@ -116,7 +125,6 @@ function makeSteakTexture() {
   return tex;
 }
 
-// Pan-fried gyoza wrapper with crispy bottom gradient
 function makeGyozaTexture() {
   const c = document.createElement('canvas');
   c.width = 256;
@@ -150,7 +158,6 @@ function makeGyozaTexture() {
   return tex;
 }
 
-// Soft radial cloud puff for steam wisps
 const steamPuffTexture = (() => {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
@@ -167,7 +174,6 @@ const steamPuffTexture = (() => {
   return new THREE.CanvasTexture(canvas);
 })();
 
-// Deterministic steam particle layout — adjusted for new bowl rim (~y 2.5, radius ~3.0)
 const steamParticleData = Array(36)
   .fill(0)
   .map((_, i) => ({
@@ -184,7 +190,6 @@ const steamParticleData = Array(36)
    Animation Wrappers
    ================================================================ */
 
-// Scroll-linked drop-in: every ingredient enters from ABOVE the bowl
 function Ingredient({ progress, drop = 5, children }) {
   const ref = useRef();
   useFrame((_, dt) => {
@@ -214,7 +219,6 @@ function Ingredient({ progress, drop = 5, children }) {
   );
 }
 
-// Post-assembly idle float + pointer parallax
 function Float({ progress, children }) {
   const ref = useRef();
   useFrame((state, dt) => {
@@ -235,24 +239,10 @@ function Float({ progress, children }) {
   return <group ref={ref}>{children}</group>;
 }
 
-// Responsive camera distance based on viewport aspect ratio
-function CameraRig() {
-  const { camera, size } = useThree();
-  useEffect(() => {
-    const aspect = size.width / size.height;
-    const d = aspect < 0.7 ? 12.2 : aspect < 1.1 ? 10.2 : 8.7;
-    camera.position.set(0, d * 0.8, d * 0.7);
-    camera.lookAt(0, 0.9, 0);
-    camera.updateProjectionMatrix();
-  }, [camera, size]);
-  return null;
-}
-
 /* ================================================================
    3D Ingredient Components
    ================================================================ */
 
-// Acacia wood bowl — lathe profile with scale + rotation entrance
 function Bowl({ progress }) {
   const ref = useRef();
   const tex = useMemo(makeWoodTexture, []);
@@ -294,7 +284,6 @@ function Bowl({ progress }) {
   );
 }
 
-// 46 chili-oil noodle strands (extruded CatmullRom curves) + sauce base + oil droplets
 function Noodles() {
   const { geos, oilDrops } = useMemo(() => {
     const rng = mulberry32(2024);
@@ -421,7 +410,6 @@ function Noodles() {
   );
 }
 
-// 6 medium-rare steak slices with procedural marbling texture
 function Steak() {
   const topTex = useMemo(makeSteakTexture, []);
   const slices = useMemo(() => {
@@ -444,7 +432,6 @@ function Steak() {
       new THREE.MeshStandardMaterial({ map: topTex, roughness: 0.42, metalness: 0 });
     const crust = () =>
       new THREE.MeshStandardMaterial({ color: '#4a2212', roughness: 0.55, metalness: 0 });
-    // [px, nx, py, ny, pz, nz]
     return slices.map(() => [cut(), cut(), crust(), crust(), crust(), crust()]);
   }, [slices, topTex]);
 
@@ -461,7 +448,6 @@ function Steak() {
   );
 }
 
-// 6 pan-fried gyoza with pleated crimped edges
 function Gyoza() {
   const tex = useMemo(makeGyozaTexture, []);
   const items = useMemo(() => {
@@ -500,7 +486,6 @@ function Gyoza() {
   );
 }
 
-// 4 jammy soft-boiled egg halves with yolk highlight + black sesame seeds
 function Eggs() {
   const eggs = useMemo(() => {
     const rng = mulberry32(555);
@@ -527,17 +512,14 @@ function Eggs() {
     <group>
       {eggs.map((e, i) => (
         <group key={i} position={e.pos} rotation={[0.08, e.ry, 0]}>
-          {/* Egg white hemisphere */}
           <mesh scale={[0.46, 0.4, 0.62]} castShadow>
             <sphereGeometry args={[1, 40, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
             <meshStandardMaterial color="#f7f4ee" roughness={0.48} />
           </mesh>
-          {/* Cut face */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} scale={[0.46, 0.62, 1]}>
             <circleGeometry args={[1, 40]} />
             <meshStandardMaterial color="#fbf8f2" roughness={0.45} />
           </mesh>
-          {/* Jammy yolk */}
           <mesh position={[0, 0.01, e.yolkOff]} scale={[0.28, 0.1, 0.38]}>
             <sphereGeometry args={[1, 32, 16]} />
             <meshStandardMaterial
@@ -556,7 +538,6 @@ function Eggs() {
               emissiveIntensity={0.3}
             />
           </mesh>
-          {/* Black sesame seeds */}
           {e.seeds.map((s, k) => (
             <mesh key={k} position={s.p} rotation={[0, s.r, 0]} scale={[0.028, 0.014, 0.046]}>
               <sphereGeometry args={[1, 10, 6]} />
@@ -569,7 +550,6 @@ function Eggs() {
   );
 }
 
-// 150 instanced scallion pieces with color palette variation
 function GreenOnions() {
   const ref = useRef();
   const count = 150;
@@ -611,7 +591,7 @@ function GreenOnions() {
 }
 
 /* ================================================================
-   Rising Steam (ported from old code, adjusted for new bowl)
+   Rising Steam
    ================================================================ */
 
 function SteamParticles({ progress }) {
@@ -632,10 +612,7 @@ function SteamParticles({ progress }) {
       const cycleDuration = 4.2;
       const progressInCycle = ((time * p.speed + p.offset) % cycleDuration) / cycleDuration;
 
-      // Rise from bowl rim (~y 2.5) upward 4 units
       const y = 2.5 + progressInCycle * 4.0;
-
-      // Natural plume expansion as wisps rise
       const expansionFactor = 1 + progressInCycle * 0.9;
       const curRadius = p.originRadius * expansionFactor;
       const curAngle = p.originAngle + Math.sin(time * p.swirlFreq + p.offset) * 0.35;
@@ -647,7 +624,6 @@ function SteamParticles({ progress }) {
 
       child.position.set(x, y, z);
 
-      // Smooth envelope: fade-in near surface, peak mid-rise, fade at top
       let fade;
       if (progressInCycle < 0.18) {
         fade = progressInCycle / 0.18;
@@ -681,10 +657,10 @@ function SteamParticles({ progress }) {
 }
 
 /* ================================================================
-   Scene Composition
+   Scene Composition (no CameraRig — camera is hardcoded on Canvas)
    ================================================================ */
 
-function Scene({ phases }) {
+function MobileScene({ phases }) {
   return (
     <>
       {/* Warm ambient fill */}
@@ -701,7 +677,7 @@ function Scene({ phases }) {
       {/* Cool fill light */}
       <directionalLight position={[-6, 6, -4]} intensity={0.4} color="#dfe8ff" />
 
-      <CameraRig />
+      {/* NO CameraRig — static camera set on <Canvas> props */}
 
       <Float progress={phases.done}>
         <Bowl progress={phases.bowl} />
@@ -725,11 +701,17 @@ function Scene({ phases }) {
 }
 
 /* ================================================================
-   Exported Component
+   Exported Mobile Component
+
+   - Hardcoded container: h-[80dvh] min-h-[500px] ensures R3F never
+     collapses to 0×0.
+   - Static camera: fov 55, position [0, 6.5, 6.5] — NO useThree
+     resize hooks.
+   - Lower DPR cap [1, 1.4] for mobile GPU budget.
+   - Wrapped in <Suspense> for safe async loading.
    ================================================================ */
 
-export default function RamenCanvas3D({ scrollProgress, className = "sticky top-0 h-screen w-full" }) {
-  // Create phase MotionValues outside Canvas (framer-motion hooks must be in DOM React tree)
+export default function MobileRamenCanvas3D({ scrollProgress, className = '' }) {
   const phases = {
     bowl: useTransform(scrollProgress, [0, 0.2], [0, 1]),
     noodles: useTransform(scrollProgress, [0.2, 0.4], [0, 1]),
@@ -741,20 +723,22 @@ export default function RamenCanvas3D({ scrollProgress, className = "sticky top-
   };
 
   return (
-    <div className={className}>
-      <Canvas
-        dpr={[1, 1.6]}
-        shadows
-        gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
-        camera={{ fov: 38, near: 0.1, far: 100, position: [0, 7, 6] }}
-        onCreated={({ gl }) => {
-          gl.setClearColor(0x000000, 0);
-          gl.toneMappingExposure = 1.08;
-        }}
-        style={{ position: 'absolute', inset: 0, background: 'transparent' }}
-      >
-        <Scene phases={phases} />
-      </Canvas>
+    <div className={`relative w-full h-[80dvh] min-h-[500px] ${className}`}>
+      <Suspense fallback={null}>
+        <Canvas
+          dpr={[1, 1.4]}
+          shadows
+          gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
+          camera={{ fov: 55, near: 0.1, far: 100, position: [0, 6.5, 6.5] }}
+          onCreated={({ gl }) => {
+            gl.setClearColor(0x000000, 0);
+            gl.toneMappingExposure = 1.08;
+          }}
+          style={{ position: 'absolute', inset: 0, background: 'transparent' }}
+        >
+          <MobileScene phases={phases} />
+        </Canvas>
+      </Suspense>
     </div>
   );
 }

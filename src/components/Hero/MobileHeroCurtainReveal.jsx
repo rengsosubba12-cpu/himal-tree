@@ -2,17 +2,18 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 /**
- * HeroCurtainReveal Component
+ * MobileHeroCurtainReveal Component
  * 
- * Scroll-driven curtain reveal hero animation:
- * - Center: Authentic calligraphy logo (`/assets/logo.png`) at z-index: 1
- * - Foreground: Two sakura branch cutouts (`coversL.png`, `coversR.png`) at z-index: 10
- * - Left branch translates outward to the left & up; right branch translates right & down.
- * - Perfectly responsive across Mobile, Tablet, and Desktop with clamp() & object-fit.
- * - Smooth GPU acceleration via translate3d / will-change: transform.
- * - Seamless handoff to the 3D Ramen assembly scene as scroll progresses.
+ * Mobile-dedicated version of the Sakura curtain reveal.
+ * Completely isolated from the desktop HeroCurtainReveal — no shared code paths.
+ * 
+ * Mobile-specific fixes:
+ * - Branch images at 85vw with max-w-[100vw] to prevent horizontal overflow
+ *   at the element level (NOT on any parent wrapper).
+ * - 100dvh container for smooth address-bar-aware height.
+ * - Same scroll-driven animation logic as desktop but tuned for portrait viewports.
  */
-export default function HeroCurtainReveal({ scrollProgress }) {
+export default function MobileHeroCurtainReveal({ scrollProgress }) {
   const containerRef = useRef(null);
   
   // Fallback to internal scroll tracking if not passed from parent
@@ -87,12 +88,12 @@ export default function HeroCurtainReveal({ scrollProgress }) {
         {/* Subtle Luxury Korean Editorial Tagline */}
         <motion.div
           style={{ opacity: logoOpacity }}
-          className="mt-4 md:mt-6 text-center space-y-1"
+          className="mt-4 text-center space-y-1"
         >
-          <p className="font-script italic text-lg md:text-2xl tracking-widest text-ink/80">
+          <p className="font-script italic text-lg tracking-widest text-ink/80">
             A Korean Café in Siliguri
           </p>
-          <p className="font-sans text-[11px] md:text-xs tracking-[0.4em] uppercase text-ink/50">
+          <p className="font-sans text-[11px] tracking-[0.4em] uppercase text-ink/50">
             실리구리의 한국 카페
           </p>
         </motion.div>
@@ -100,9 +101,11 @@ export default function HeroCurtainReveal({ scrollProgress }) {
 
       {/* ================================================================
           LAYER 2: Left Sakura Branch (Anchored Top-Left, z-index: 10)
-          Natural branch growth originates top-left -> exits outward left & up
+          max-w-[100vw] on the motion.img directly prevents horizontal overflow.
           ================================================================ */}
-      <motion.div
+      <motion.img
+        src="/assets/covers/CoverLeft.png"
+        alt="Sakura Branch Left"
         style={{
           x: leftX,
           y: leftY,
@@ -110,22 +113,18 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           opacity: leftOpacity,
           willChange: 'transform, opacity',
         }}
-        className="absolute top-0 left-0 z-10 origin-top-left pointer-events-none"
-      >
-        <img
-          src="/assets/covers/CoverLeft.png"
-          alt="Sakura Branch Left"
-          className="w-[72vw] sm:w-[56vw] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
-          loading="eager"
-          decoding="async"
-        />
-      </motion.div>
+        className="absolute top-0 left-0 z-10 origin-top-left pointer-events-none w-[85vw] max-w-[100vw] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
+        loading="eager"
+        decoding="async"
+      />
 
       {/* ================================================================
           LAYER 3: Right Sakura Branch (Anchored Top-Right, z-index: 10)
-          Natural branch growth trunk on right side -> exits outward right & up
+          max-w-[100vw] on the motion.img directly prevents horizontal overflow.
           ================================================================ */}
-      <motion.div
+      <motion.img
+        src="/assets/covers/CoverRight.png"
+        alt="Sakura Branch Right"
         style={{
           x: rightX,
           y: rightY,
@@ -133,16 +132,10 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           opacity: rightOpacity,
           willChange: 'transform, opacity',
         }}
-        className="absolute top-0 right-0 z-10 origin-top-right pointer-events-none"
-      >
-        <img
-          src="/assets/covers/CoverRight.png"
-          alt="Sakura Branch Right"
-          className="w-[72vw] sm:w-[56vw] md:w-[48vw] lg:w-[42vw] max-w-[760px] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
-          loading="eager"
-          decoding="async"
-        />
-      </motion.div>
+        className="absolute top-0 right-0 z-10 origin-top-right pointer-events-none w-[85vw] max-w-[100vw] h-auto object-contain filter drop-shadow-[0_12px_32px_rgba(0,0,0,0.06)]"
+        loading="eager"
+        decoding="async"
+      />
 
       {/* ================================================================
           LAYER 4: Subtle Scroll-to-Explore Cue (z-index: 20)
@@ -152,9 +145,9 @@ export default function HeroCurtainReveal({ scrollProgress }) {
           opacity: hintOpacity,
           y: hintY,
         }}
-        className="absolute bottom-8 md:bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none"
       >
-        <span className="font-sans text-[10px] md:text-xs tracking-[0.35em] uppercase text-ink/40 mb-2">
+        <span className="font-sans text-[10px] tracking-[0.35em] uppercase text-ink/40 mb-2">
           Scroll to Explore
         </span>
         <motion.div
