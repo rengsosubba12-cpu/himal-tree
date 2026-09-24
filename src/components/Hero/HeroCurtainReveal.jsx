@@ -62,7 +62,7 @@ export default function HeroCurtainReveal({ scrollProgress }) {
     <motion.div
       ref={containerRef}
       style={{ visibility: containerVisibility }}
-      className="absolute inset-0 z-10 w-full h-full min-h-[100dvh] pointer-events-none select-none overflow-hidden flex items-center justify-center"
+      className="absolute inset-0 z-10 w-full max-w-[100vw] h-full min-h-[100dvh] pointer-events-none select-none overflow-hidden flex items-center justify-center"
       aria-label="Himal Tree Curtain Reveal"
     >
       {/* ================================================================

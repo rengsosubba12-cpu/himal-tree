@@ -7,7 +7,7 @@ export default function BookingForm({
   phoneNumber = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_WHATSAPP_PHONE) || '+919883597341'
 }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
 
   const initialFormData = {
     name: '',
@@ -158,7 +158,7 @@ export default function BookingForm({
   };
 
   return (
-    <section id="book" className="relative bg-[#F9F8F6] text-[#1A1A1A] py-16 sm:py-24 md:py-32 px-4 sm:px-8 md:px-16 min-h-screen flex items-center">
+    <section id="book" className="relative bg-[#F9F8F6] text-[#1A1A1A] py-16 sm:py-24 md:py-32 px-4 sm:px-8 md:px-16 min-h-screen flex items-center overflow-x-hidden max-w-[100vw]">
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
         
         {/* Left Column */}

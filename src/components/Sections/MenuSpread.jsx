@@ -54,7 +54,6 @@ function ParallaxMedia({ src, videoSrc, alt, strength = 15, objectPosition = 'ce
           <img
             src={src}
             alt={alt}
-            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-[1.06]"
             style={{ objectPosition }}
           />
@@ -69,7 +68,7 @@ function ParallaxMedia({ src, videoSrc, alt, strength = 15, objectPosition = 'ce
 // ─────────────────────────────────────────────────────────────────────────────
 function CinematicReveal({ children, delay = 0, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-8% 0px' });
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -50px 0px' });
 
   return (
     <motion.div
@@ -97,7 +96,7 @@ function CinematicReveal({ children, delay = 0, className = '' }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function TextReveal({ children, delay = 0, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-6% 0px' });
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -30px 0px' });
 
   return (
     <motion.div
@@ -167,7 +166,7 @@ function DishMeta({ item, dark = false, delay = 0, align = 'left' }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function MenuSectionHeader() {
   const ref    = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-5% 0px' });
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -30px 0px' });
 
   const title  = 'Our Menu';
   const chars  = title.split('');
@@ -487,9 +486,9 @@ function MobileStack({ items }) {
   return (
     <div className="grid grid-cols-1 gap-14 sm:gap-20 md:hidden">
       {items.map((item, i) => (
-        <div key={item.id} className="flex flex-col gap-4">
+        <div key={item.id} className="flex flex-col gap-0">
           {/* Label + number row */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between px-6 mb-3">
             <span className="font-sans text-[9px] tracking-[0.45em] uppercase opacity-40 font-semibold">
               {item.category}
             </span>
@@ -501,9 +500,9 @@ function MobileStack({ items }) {
             </span>
           </div>
 
-          {/* Image — full width single-column editorial container */}
+          {/* Image — full width edge-to-edge editorial container */}
           <div
-            className="relative overflow-hidden rounded-sm w-full aspect-[4/5] shadow-md border border-[#2A2118]/10"
+            className="relative overflow-hidden w-[calc(100%+2rem)] sm:w-[calc(100%+4rem)] max-w-[100vw] aspect-[4/5] shadow-md border-y border-[#2A2118]/10 -mx-4 sm:-mx-8"
           >
             <CinematicReveal className="absolute inset-0" delay={0}>
               <div className="absolute inset-0">
@@ -517,19 +516,23 @@ function MobileStack({ items }) {
             </CinematicReveal>
           </div>
 
-          {/* Text block */}
-          <div className="px-1 sm:px-2 pt-2">
+          {/* Text block — elegant padding for premium feel */}
+          <div className="px-6 py-8">
             <TextReveal delay={0.1}>
               <h3
-                className="font-display text-[#1A1A1A] leading-[0.95] mb-1 text-[clamp(1.75rem,5vw,3rem)]"
+                className="font-display text-[#1A1A1A] leading-[0.95] mb-1 text-4xl"
+                style={{ fontFamily: 'var(--font-seasons, "The Seasons", "Cormorant Garamond", "Playfair Display", serif)' }}
               >
                 {item.name}
               </h3>
-              <p className="font-script italic text-[#1A1A1A] opacity-40 mb-3 text-base sm:text-lg">
+              <p
+                className="font-script italic text-[#1A1A1A] opacity-40 mb-4 text-lg"
+                style={{ fontFamily: 'var(--font-seasons, "The Seasons", "Cormorant Garamond", "Playfair Display", serif)' }}
+              >
                 {item.nameKr}
               </p>
               <p
-                className="font-sans text-[#2A2118] leading-relaxed mb-4 text-[0.8rem] sm:text-[0.85rem] tracking-[0.03em]"
+                className="font-sans text-[#2A2118] leading-relaxed mb-5 text-[0.82rem] sm:text-[0.85rem] tracking-[0.03em]"
               >
                 {item.description}
               </p>
@@ -541,7 +544,7 @@ function MobileStack({ items }) {
                   · ₩{item.priceKRW?.toLocaleString()}
                 </span>
               </div>
-              <div className="h-px w-10 bg-[rgba(26,26,26,0.2)] mt-3" />
+              <div className="h-px w-10 bg-[rgba(26,26,26,0.2)] mt-4" />
             </TextReveal>
           </div>
         </div>
@@ -559,7 +562,7 @@ export default function MenuSpread() {
   return (
     <section
       id="menu"
-      className="relative bg-[#F9F8F6] text-[#1A1A1A] py-12 md:py-36 px-4 sm:px-8 md:px-10 lg:px-16 overflow-hidden"
+      className="relative bg-[#F9F8F6] text-[#1A1A1A] py-12 md:py-36 px-4 sm:px-8 md:px-10 lg:px-16 overflow-hidden max-w-[100vw]"
     >
       {/* Subtle grain texture overlay */}
       <div

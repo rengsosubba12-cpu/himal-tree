@@ -154,7 +154,7 @@ const SEASONS_FONT = {
 // ─────────────────────────────────────────────────────────────────────────────
 function CinematicReveal({ children, delay = 0, className = '', style = {} }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-5% 0px' });
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -50px 0px' });
 
   return (
     <motion.div
@@ -224,7 +224,7 @@ function ParallaxPullQuote({ quote, alignRight = false, chapterRef }) {
   return (
     <motion.blockquote
       style={{ y: isMobile ? 0 : y, willChange: isMobile ? 'auto' : 'transform' }}
-      className={`relative my-10 md:my-14 lg:my-16 z-20 max-w-[44ch] ${
+      className={`relative my-10 md:my-14 lg:my-16 z-20 max-w-[44ch] overflow-hidden ${
         alignRight
           ? 'text-right md:-mr-8 lg:-mr-16 xl:-mr-20 ml-auto'
           : 'text-left md:-ml-8 lg:-ml-16 xl:-ml-20 mr-auto'
@@ -317,6 +317,13 @@ function StoryVideo({ src, alt, objectPosition = 'center 20%' }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function StoryImage({ src, alt, objectPosition = 'center 20%' }) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setIsLoaded(true);
+    }
+  }, [src]);
 
   return (
     <div className="relative w-full h-full bg-[#EAE6DF]/60 overflow-hidden group">
@@ -324,9 +331,9 @@ function StoryImage({ src, alt, objectPosition = 'center 20%' }) {
         <div className="absolute inset-0 bg-gradient-to-r from-[#EAE6DF] via-[#F3EFE9] to-[#EAE6DF] animate-pulse" />
       )}
       <img
+        ref={imgRef}
         src={src}
         alt={alt}
-        loading="lazy"
         onLoad={() => setIsLoaded(true)}
         className={`w-full h-full object-cover transition-all duration-[1100ms] ease-out group-hover:scale-[1.04] ${
           isLoaded ? 'opacity-100' : 'opacity-0'
@@ -548,11 +555,11 @@ function StickyChapterMobile({ chapter }) {
   const chapterRef = useRef(null);
 
   return (
-    <div ref={chapterRef} className="md:hidden flex flex-col mb-16 sm:mb-24 last:mb-8">
+    <div ref={chapterRef} className="md:hidden flex flex-col mb-16 sm:mb-24 last:mb-8 w-full max-w-[100vw] overflow-x-hidden">
       {/* Mobile Media: Signature clip-path wipe reveal & top-weighted positioning */}
       <CinematicReveal
         delay={0.05}
-        className="relative w-full aspect-[4/5] sm:h-[50dvh] overflow-hidden rounded-sm shadow-md border border-[#2A2118]/10"
+        className="relative w-full max-w-[100vw] aspect-[4/5] overflow-hidden rounded-sm shadow-md border-y border-[#2A2118]/10"
       >
         <div className="relative w-full h-full">
           {chapter.media.type === 'video' ? (
@@ -591,9 +598,9 @@ function StickyChapterMobile({ chapter }) {
         </div>
       </CinematicReveal>
 
-      {/* Mobile Overlapping Text Card - Opaque Paper Tint (no backdrop blur) */}
+      {/* Mobile Overlapping Text Card - Opaque Paper Tint (no backdrop blur) with elegant px-6 py-8 */}
       <div
-        className="relative z-10 -mt-10 sm:-mt-14 mx-3 sm:mx-6 p-6 sm:p-9 bg-[#F4EFEA] rounded-sm shadow-lg shadow-[#2A2118]/10 border border-[#2A2118]/12"
+        className="relative z-10 -mt-10 sm:-mt-14 mx-4 sm:mx-6 px-6 py-8 bg-[#F4EFEA] rounded-sm shadow-lg shadow-[#2A2118]/10 border border-[#2A2118]/12"
         style={{
           backgroundImage:
             'radial-gradient(rgba(42, 33, 24, 0.05) 1px, transparent 0)',
@@ -607,7 +614,7 @@ function StickyChapterMobile({ chapter }) {
 
         {/* Title in The Seasons */}
         <h3
-          className="text-[#1A1A1A] leading-[0.94] mb-5 font-normal text-[clamp(1.75rem,7vw,3.2rem)]"
+          className="text-[#1A1A1A] leading-[0.94] mb-5 font-normal text-4xl"
           style={SEASONS_FONT}
         >
           {chapter.title}
@@ -672,7 +679,7 @@ function StickyChapterMobile({ chapter }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function StoriesSectionHeader() {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-5% 0px' });
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -30px 0px' });
   const title = 'Our Stories';
   const chars = title.split('');
 
@@ -745,7 +752,7 @@ export default function StoriesSection() {
   return (
     <section
       id="stories"
-      className="relative text-[#1A1A1A]"
+      className="relative text-[#1A1A1A] overflow-x-hidden max-w-[100vw]"
       style={{ willChange: 'transform' }}
     >
       {/* Paper wash allowing bg-paper.jpg texture to breathe organically through generous whitespace */}

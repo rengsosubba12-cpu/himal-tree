@@ -27,7 +27,7 @@ function App() {
   const ramenProgress = useTransform(scrollYProgress, [0.24, 1.0], [0, 1]);
 
   return (
-    <>
+    <div className="overflow-x-hidden max-w-[100vw]">
       {/* Persistent textured paper background for continuous cinematic feel */}
       <div
         className="fixed inset-0 pointer-events-none -z-10 bg-cover bg-center"
@@ -48,9 +48,9 @@ function App() {
       <section
         id="home"
         ref={heroRef}
-        className="relative h-[550vh] w-full"
+        className="relative h-[550vh] w-full max-w-[100vw] overflow-x-hidden"
       >
-        <div className="sticky top-0 h-screen h-[100dvh] w-full overflow-hidden">
+        <div className="sticky top-0 h-screen h-[100dvh] w-full max-w-[100vw] overflow-hidden">
           {/* Phase 1: Responsive Scroll-Driven Sakura Curtain Reveal */}
           <HeroCurtainReveal scrollProgress={curtainProgress} />
 
@@ -68,7 +68,7 @@ function App() {
       <BookingForm />
 
       {/* Footer */}
-      <footer className="bg-paper text-ink py-14 md:py-20 px-4 sm:px-8 md:px-16 border-t border-hairline">
+      <footer className="bg-paper text-ink py-14 md:py-20 px-4 sm:px-8 md:px-16 border-t border-hairline overflow-x-hidden max-w-[100vw]">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {/* Brand */}
           <div>
@@ -98,7 +98,7 @@ function App() {
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
 

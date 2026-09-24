@@ -74,7 +74,7 @@ function QuoteItem({ quote, scrollProgress }) {
 
 export default function ScrollTextOverlay({ scrollProgress }) {
   return (
-    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden flex items-center justify-center">
+    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden flex items-center justify-center max-w-[100vw]">
       {heroQuotes.map((quote, index) => (
         <QuoteItem key={index} quote={quote} scrollProgress={scrollProgress} />
       ))}

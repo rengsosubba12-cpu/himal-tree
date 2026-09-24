@@ -51,7 +51,7 @@ const MagazineNav = () => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 80, damping: 20 }}
-            className="fixed inset-0 z-40 bg-[#F9F8F6] flex flex-col justify-between pt-24 md:pt-32 pb-12 px-6 md:px-16 overflow-y-auto"
+            className="fixed inset-0 z-40 bg-[#F9F8F6] flex flex-col justify-between pt-24 md:pt-32 pb-12 px-6 md:px-16 overflow-y-auto overflow-x-hidden max-w-[100vw]"
           >
             <div className="flex flex-col w-full max-w-7xl mx-auto">
               {navItems?.map((item, index) => (
