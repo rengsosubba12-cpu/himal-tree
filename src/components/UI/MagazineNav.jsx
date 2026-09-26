@@ -5,6 +5,17 @@ import { navItems, cafeInfo } from '../../data/content';
 const MagazineNav = () => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleNavClick = (sectionId) => {
+    setIsOpen(false);
+
+    setTimeout(() => {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
   return (
     <>
       {/* Trigger Button */}
@@ -54,10 +65,16 @@ const MagazineNav = () => {
             className="fixed inset-0 z-40 bg-[#F9F8F6] flex flex-col justify-between pt-32 pb-12 px-8 md:px-16 overflow-y-auto"
           >
             <div className="flex flex-col w-full max-w-7xl mx-auto">
-              {navItems?.map((item, index) => (
+              {navItems?.map((item, index) => {
+                const sectionId = (item.href || '').replace('#', '');
+                return (
                 <motion.a
                   key={item.id || index}
                   href={item.href || '#'}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavClick(sectionId);
+                  }}
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 50 }}
@@ -74,7 +91,8 @@ const MagazineNav = () => {
                     </span>
                   </div>
                 </motion.a>
-              ))}
+                );
+              })}
             </div>
 
             {/* Footer */}
