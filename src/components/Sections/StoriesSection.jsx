@@ -311,6 +311,7 @@ function StoryVideo({ src, alt, objectPosition = 'center 20%' }) {
         loop
         muted={isMuted}
         playsInline
+        webkit-playsinline="true"
         preload="auto"
         className="w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
         style={{ objectPosition }}
@@ -557,129 +558,326 @@ function StickyChapterDesktopTablet({ chapter }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mobile Chapter (<768px)
-// Stacked vertically with negative margin physical overlap card
-// Opaque textured paper look (no backdrop-blur), micro-parallax disabled
+// MobileParallaxMedia — Wraps media in motion.div with scroll parallax
+// (y: [-20, 20]) and whileInView scale reveal (0.95→1) for premium 3D depth
 // ─────────────────────────────────────────────────────────────────────────────
-function StickyChapterMobile({ chapter }) {
-  const chapterRef = useRef(null);
+function MobileParallaxMedia({ chapter, className = '', style = {} }) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start end', 'end start'],
+  });
+
+  const rawY = useTransform(scrollYProgress, [0, 1], [-20, 20]);
+  const y = useSpring(rawY, { stiffness: 80, damping: 26, restDelta: 0.001 });
 
   return (
-    <div ref={chapterRef} className="md:hidden flex flex-col mb-24 last:mb-8">
-      {/* Mobile Media: Signature clip-path wipe reveal & top-weighted positioning */}
-      <CinematicReveal
-        delay={0.05}
-        className="relative w-full h-[54vh] min-h-[340px] overflow-hidden rounded-sm shadow-lg border border-[#2A2118]/10"
-      >
-        <div className="relative w-full h-full">
-          {chapter.media.type === 'video' ? (
-            <StoryVideo
-              src={chapter.media.src}
-              alt={chapter.media.alt}
-              objectPosition={chapter.media.objectPosition}
-            />
-          ) : (
-            <StoryImage
-              src={chapter.media.src}
-              alt={chapter.media.alt}
-              objectPosition={chapter.media.objectPosition}
-            />
-          )}
+    <motion.div
+      ref={ref}
+      className={`relative overflow-hidden ${className}`}
+      style={{ y, ...style }}
+      initial={{ scale: 0.95, opacity: 0 }}
+      whileInView={{ scale: 1, opacity: 1 }}
+      viewport={{ once: true, margin: '-5% 0px' }}
+      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="relative w-full h-full">
+        {chapter.media.type === 'video' ? (
+          <StoryVideo
+            src={chapter.media.src}
+            alt={chapter.media.alt}
+            objectPosition={chapter.media.objectPosition}
+          />
+        ) : (
+          <StoryImage
+            src={chapter.media.src}
+            alt={chapter.media.alt}
+            objectPosition={chapter.media.objectPosition}
+          />
+        )}
 
-          {/* Chapter Watermark Number */}
-          <div className="absolute top-4 left-5 z-10 pointer-events-none select-none">
-            <span
-              className="text-[#F9F8F6]/35 drop-shadow font-serif"
-              style={{ fontSize: '3.6rem', lineHeight: 1, ...SEASONS_FONT }}
-              aria-hidden="true"
-            >
-              {chapter.chapterNumber}
-            </span>
-          </div>
-
-          {/* Location Tag */}
-          <div className="absolute bottom-10 left-5 z-10 pointer-events-none select-none">
-            <span className="font-sans text-[8px] tracking-[0.3em] uppercase text-[#F9F8F6]/60 drop-shadow">
-              {chapter.coords}
-            </span>
-          </div>
-
-          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,20,14,0.5)] via-transparent to-transparent pointer-events-none" />
+        {/* Chapter Watermark Number */}
+        <div className="absolute top-4 left-5 z-10 pointer-events-none select-none">
+          <span
+            className="text-[#F9F8F6]/30 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] font-serif"
+            style={{ fontSize: '3.2rem', lineHeight: 1, ...SEASONS_FONT }}
+            aria-hidden="true"
+          >
+            {chapter.chapterNumber}
+          </span>
         </div>
-      </CinematicReveal>
 
-      {/* Mobile Overlapping Text Card - Opaque Textured Paper (no backdrop blur) */}
-      <div
-        className="relative z-10 -mt-[14%] mx-3 sm:mx-6 p-7 sm:p-9 bg-[#F9F8F6] rounded-sm shadow-2xl border border-[#2A2118]/15"
+        {/* Location Tag */}
+        <div className="absolute bottom-4 left-5 z-10 pointer-events-none select-none">
+          <span className="font-sans text-[7px] tracking-[0.3em] uppercase text-[#F9F8F6]/55 drop-shadow">
+            {chapter.coords}
+          </span>
+        </div>
+
+        {/* Bottom vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,20,14,0.55)] via-transparent to-transparent pointer-events-none" />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MobileEditorialTextCard — Floating text card with textured paper bg
+// Uses heavy negative margins / absolute offset to overlap media for 3D depth
+// ─────────────────────────────────────────────────────────────────────────────
+function MobileEditorialTextCard({
+  chapter,
+  className = '',
+  style = {},
+  compact = false,
+  showFooter = true,
+}) {
+  return (
+    <motion.div
+      className={`relative bg-[#F9F8F6] rounded-sm shadow-2xl border border-[#2A2118]/12 ${className}`}
+      style={{
+        backgroundImage:
+          'radial-gradient(rgba(42, 33, 24, 0.04) 1px, transparent 0)',
+        backgroundSize: '22px 22px',
+        ...style,
+      }}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-5% 0px' }}
+      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+    >
+      {/* Eyebrow */}
+      <span className="font-sans text-[7.5px] tracking-[0.45em] uppercase text-[#2A2118] opacity-50 block mb-3 font-semibold">
+        {chapter.chapterLabel}
+      </span>
+
+      {/* Title */}
+      <h3
+        className="text-[#1A1A1A] leading-[0.94] mb-4 font-normal"
         style={{
-          backgroundImage:
-            'radial-gradient(rgba(42, 33, 24, 0.05) 1px, transparent 0)',
-          backgroundSize: '24px 24px',
+          fontSize: compact ? 'clamp(1.8rem, 7vw, 2.4rem)' : 'clamp(2.3rem, 8vw, 3.2rem)',
+          ...SEASONS_FONT,
         }}
       >
-        {/* Eyebrow */}
-        <span className="font-sans text-[8.5px] tracking-[0.45em] uppercase text-[#2A2118] opacity-55 block mb-3 font-semibold">
-          {chapter.chapterLabel}
-        </span>
+        {chapter.title}
+      </h3>
 
-        {/* Title in The Seasons */}
-        <h3
-          className="text-[#1A1A1A] leading-[0.94] mb-5 font-normal"
-          style={{ fontSize: 'clamp(2.3rem, 8vw, 3.2rem)', ...SEASONS_FONT }}
-        >
-          {chapter.title}
-        </h3>
+      {/* Hairline Divider */}
+      <div className="h-px w-10 bg-[#2A2118]/20 mb-5" />
 
-        {/* Hairline Divider */}
-        <div className="h-px w-12 bg-[#2A2118]/20 mb-6" />
+      {/* Narrative Part 1 */}
+      <p
+        className="font-body text-[#2A2118] leading-[1.8] mb-4"
+        style={{ fontSize: '0.8rem', letterSpacing: '0.02em' }}
+      >
+        {chapter.narrativePart1}
+      </p>
 
-        {/* Narrative Part 1 */}
+      {/* Pull-Quote */}
+      <blockquote className="my-5 border-l-2 border-[#8B2626] pl-4 py-1">
         <p
-          className="font-body text-[#2A2118] leading-[1.85] mb-5"
-          style={{ fontSize: '0.82rem', letterSpacing: '0.02em' }}
+          className="text-[#2A2118] italic leading-[1.22]"
+          style={{ fontSize: 'clamp(1.15rem, 4.2vw, 1.5rem)', ...SEASONS_FONT }}
         >
-          {chapter.narrativePart1}
+          &ldquo;{chapter.pullQuote}&rdquo;
         </p>
+      </blockquote>
 
-        {/* Italicized Pull-Quote (No Parallax on Mobile, Red Accent Border) */}
-        <blockquote className="my-6 border-l-2 border-[#8B2626] pl-4 py-1">
-          <p
-            className="text-[#2A2118] italic leading-[1.25]"
-            style={{ fontSize: 'clamp(1.25rem, 4.6vw, 1.6rem)', ...SEASONS_FONT }}
-          >
-            &ldquo;{chapter.pullQuote}&rdquo;
-          </p>
-        </blockquote>
+      {/* Narrative Part 2 */}
+      <p
+        className="font-body text-[#2A2118] leading-[1.8] mb-3"
+        style={{ fontSize: '0.8rem', letterSpacing: '0.02em' }}
+      >
+        {chapter.narrativePart2}
+      </p>
 
-        {/* Narrative Part 2 */}
-        <p
-          className="font-body text-[#2A2118] leading-[1.85] mb-4"
-          style={{ fontSize: '0.82rem', letterSpacing: '0.02em' }}
-        >
-          {chapter.narrativePart2}
-        </p>
+      {/* Narrative Part 3 */}
+      <p
+        className="font-body text-[#2A2118] leading-[1.8] opacity-80 italic mb-5"
+        style={{ fontSize: '0.78rem', letterSpacing: '0.02em' }}
+      >
+        {chapter.narrativePart3}
+      </p>
 
-        {/* Narrative Part 3 */}
-        <p
-          className="font-body text-[#2A2118] leading-[1.85] opacity-85 italic mb-6"
-          style={{ fontSize: '0.8rem', letterSpacing: '0.02em' }}
-        >
-          {chapter.narrativePart3}
-        </p>
-
-        {/* Card Footer Stamp */}
-        <div className="pt-5 border-t border-[#2A2118]/12 flex items-center justify-between">
-          <span className="font-sans text-[8px] tracking-[0.35em] uppercase opacity-45 font-semibold">
+      {/* Card Footer Stamp */}
+      {showFooter && (
+        <div className="pt-4 border-t border-[#2A2118]/10 flex items-center justify-between">
+          <span className="font-sans text-[7px] tracking-[0.35em] uppercase opacity-40 font-semibold">
             Himal Tree Chronicles
           </span>
           <span
-            className="text-[#2A2118]/25 text-3xl font-serif"
+            className="text-[#2A2118]/20 text-2xl font-serif"
             style={SEASONS_FONT}
           >
             {chapter.chapterNumber}
           </span>
         </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mobile Chapter (<768px) — 3D EDITORIAL MAGAZINE LOOKBOOK
+// 6 unique asymmetrical layout patterns that cycle per chapter index:
+//   0 = Full-Bleed Hero Crop (cinematic 50dvh, text card overlaps from below)
+//   1 = Overlapping Portrait (70% width pushed right, text from left overlap)
+//   2 = Macro Detail Inset (60% width, overlaps previous, deep z-stack)
+//   3 = Split Duo (small square + tall portrait, text weaves between)
+//   4 = Cinematic Ultra-Wide (25dvh letterbox, text card floats above)
+//   5 = Full-Bleed Finale (text card inside the image as overlay)
+// ─────────────────────────────────────────────────────────────────────────────
+function StickyChapterMobile({ chapter }) {
+  const chapterRef = useRef(null);
+  const chapterIndex = storyChapters.findIndex((c) => c.id === chapter.id);
+  const layoutVariant = chapterIndex % 6;
+
+  // ── Layout 0: FULL-BLEED HERO CROP ──────────────────────────────────────
+  if (layoutVariant === 0) {
+    return (
+      <div ref={chapterRef} className="md:hidden relative mb-28 last:mb-8">
+        {/* Hero Image: Full bleed, cinematic crop */}
+        <MobileParallaxMedia
+          chapter={chapter}
+          className="w-full h-[50dvh] min-h-[320px] rounded-sm shadow-xl border border-[#2A2118]/8"
+        />
+
+        {/* Text Card: Floats up from below with heavy overlap */}
+        <MobileEditorialTextCard
+          chapter={chapter}
+          className="z-20 -mt-16 mx-4 sm:mx-6 p-7 sm:p-8"
+        />
       </div>
+    );
+  }
+
+  // ── Layout 1: OVERLAPPING PORTRAIT (pushed right) ───────────────────────
+  if (layoutVariant === 1) {
+    return (
+      <div ref={chapterRef} className="md:hidden relative mb-28 last:mb-8">
+        {/* Portrait Image: Narrow tall, pushed to right edge */}
+        <MobileParallaxMedia
+          chapter={chapter}
+          className="w-[72%] h-[42dvh] min-h-[300px] ml-auto rounded-sm shadow-xl border border-[#2A2118]/8"
+        />
+
+        {/* Text Card: Overlaps from left side, pushed into the image */}
+        <MobileEditorialTextCard
+          chapter={chapter}
+          className="z-20 -mt-24 mr-auto ml-3 sm:ml-5 w-[82%] p-6 sm:p-8"
+        />
+      </div>
+    );
+  }
+
+  // ── Layout 2: MACRO DETAIL INSET (offset left, deep overlap) ────────────
+  if (layoutVariant === 2) {
+    return (
+      <div ref={chapterRef} className="md:hidden relative mb-28 last:mb-8">
+        {/* Inset Image: Smaller, offset left, z-10 */}
+        <MobileParallaxMedia
+          chapter={chapter}
+          className="w-[62%] h-[32dvh] min-h-[240px] mr-auto rounded-sm shadow-xl border border-[#2A2118]/8 z-10"
+        />
+
+        {/* Text Card: Overlaps the image substantially from the right */}
+        <MobileEditorialTextCard
+          chapter={chapter}
+          className="z-20 -mt-20 ml-auto mr-3 sm:mr-5 w-[80%] p-6 sm:p-8"
+        />
+      </div>
+    );
+  }
+
+  // ── Layout 3: SPLIT DUO (staggered pair) ────────────────────────────────
+  if (layoutVariant === 3) {
+    return (
+      <div ref={chapterRef} className="md:hidden relative mb-28 last:mb-8">
+        {/* Primary Image: Large, offset right */}
+        <MobileParallaxMedia
+          chapter={chapter}
+          className="w-[75%] h-[38dvh] min-h-[280px] ml-auto rounded-sm shadow-xl border border-[#2A2118]/8"
+        />
+
+        {/* Secondary accent block (decorative geometric) */}
+        <motion.div
+          className="absolute top-[30dvh] left-3 w-[35%] h-[15dvh] bg-[#2A2118]/5 rounded-sm z-0"
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, delay: 0.3 }}
+        />
+
+        {/* Text Card: Full width, overlaps both elements */}
+        <MobileEditorialTextCard
+          chapter={chapter}
+          className="z-20 -mt-14 mx-3 sm:mx-5 p-7 sm:p-8"
+        />
+      </div>
+    );
+  }
+
+  // ── Layout 4: CINEMATIC ULTRA-WIDE LETTERBOX ────────────────────────────
+  if (layoutVariant === 4) {
+    return (
+      <div ref={chapterRef} className="md:hidden relative mb-28 last:mb-8">
+        {/* Cinematic letterbox: Full width, shorter height */}
+        <MobileParallaxMedia
+          chapter={chapter}
+          className="w-full h-[28dvh] min-h-[200px] rounded-sm shadow-xl border border-[#2A2118]/8"
+        />
+
+        {/* Text Card: Floats above with maximum overlap to create depth illusion */}
+        <MobileEditorialTextCard
+          chapter={chapter}
+          className="z-20 -mt-10 mx-5 sm:mx-8 p-6 sm:p-8"
+        />
+
+        {/* Decorative offset line accent */}
+        <motion.div
+          className="w-px h-16 bg-[#8B2626]/25 mx-auto mt-6"
+          initial={{ scaleY: 0 }}
+          whileInView={{ scaleY: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          style={{ transformOrigin: 'top' }}
+        />
+      </div>
+    );
+  }
+
+  // ── Layout 5: FULL-BLEED FINALE (immersive text-over-image) ─────────────
+  return (
+    <div ref={chapterRef} className="md:hidden relative mb-28 last:mb-8">
+      {/* Full bleed image, extra tall for immersion */}
+      <MobileParallaxMedia
+        chapter={chapter}
+        className="w-full h-[55dvh] min-h-[360px] rounded-sm shadow-xl border border-[#2A2118]/8"
+      />
+
+      {/* Text Card: Deep overlap creating an editorial spread feel */}
+      <MobileEditorialTextCard
+        chapter={chapter}
+        className="z-20 -mt-28 mx-3 sm:mx-5 p-7 sm:p-9"
+      />
+
+      {/* Chapter colophon flourish */}
+      <motion.div
+        className="flex items-center justify-center gap-3 mt-8 opacity-30"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 0.3 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1, delay: 0.5 }}
+      >
+        <div className="h-px w-8 bg-[#2A2118]" />
+        <span
+          className="font-serif text-[#2A2118] text-xs tracking-[0.3em] uppercase"
+          style={SEASONS_FONT}
+        >
+          ✦
+        </span>
+        <div className="h-px w-8 bg-[#2A2118]" />
+      </motion.div>
     </div>
   );
 }
